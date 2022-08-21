@@ -160,7 +160,7 @@ static int cmd_x(char *args) {
     if (parse_int(arg, true, &num)) {
       printf("Only int value can be accepted as scan size\n");
     } else {
-      const word_t base = 0x80000000UL;
+      const word_t base = 0x80000010UL;
       if (num >= 0) {
         for (i = 0; i < num; ++ i) {
           addr = base + i * 4;
