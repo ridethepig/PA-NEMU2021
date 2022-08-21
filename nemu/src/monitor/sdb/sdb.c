@@ -2,6 +2,7 @@
 #include <cpu/cpu.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <ctype.h>
 #include "sdb.h"
 
 static int is_batch_mode = false;
@@ -39,6 +40,12 @@ static int cmd_q(char *args) {
 
 static int cmd_help(char *args);
 
+static int cmd_si(char *args);
+
+static int cmd_info(char *args);
+
+static int cmd_info(char *args);
+
 static struct {
   const char *name;
   const char *description;
@@ -47,7 +54,8 @@ static struct {
   { "help", "Display informations about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
-
+  { "si", "Single Instruction", cmd_si},
+  { "info", "Display register or watchpoint information", cmd_info},
   /* TODO: Add more commands */
 
 };
@@ -73,6 +81,49 @@ static int cmd_help(char *args) {
       }
     }
     printf("Unknown command '%s'\n", arg);
+  }
+  return 0;
+}
+
+static int cmd_si(char *args) {
+  char *arg = strtok(NULL, " ");
+  int i, n_steps;
+  if (arg == NULL) {
+    cpu_exec(1);
+  } else {
+    i = 0;
+    n_steps = 0;
+    while(arg[i] != '\0') {
+      if (!isdigit(arg[i])) {
+        printf("Only unsigned int value can be accepted as step number\n");
+        return 0;
+      } else {
+        n_steps = n_steps * 10 + arg[i] - '0';
+      }
+      i += 1;
+    }
+    arg = strtok(NULL, " ");
+    if (arg != NULL) {
+      printf("Too many arguments. Ignoring...\n");
+    }
+    cpu_exec(n_steps);
+  }
+  return 0;
+}
+
+static int cmd_info(char *args){
+  char *arg = strtok(NULL, " ");
+  if (arg == NULL) {
+    printf("info r - display register values\n info w - display watchpoint info\n");
+  }
+  else if (strcmp("r", arg) == 0){
+    isa_reg_display();
+  }
+  else if (strcmp("w", arg) == 0) {
+    printf("not implemented yet\n");
+  }
+  else {
+    printf("info r - display register values\n info w - display watchpoint info\n");
   }
   return 0;
 }
