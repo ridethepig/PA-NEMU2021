@@ -10,7 +10,7 @@ const char *regs[] = {
 
 void isa_reg_display() {
   int i;
-  printf("| register | Hex | Dec |\n");
+  // printf("| register | Hex | Dec |\n");
   for (i = 0; i < 32; ++ i) {
     printf("| %s | 0x%016lX | %20ld |\n", regs[i], gpr(i), gpr(i));
   }

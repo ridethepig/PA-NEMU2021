@@ -1,5 +1,6 @@
 #include <isa.h>
 #include <cpu/cpu.h>
+#include <memory/vaddr.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <ctype.h>
@@ -28,23 +29,37 @@ static char* rl_gets() {
   return line_read;
 }
 
+static int parse_int(const char* str, const bool isSigned, int * result) {
+  int ans = 0;
+  int sign = 1;
+  int i = 0;
+  if (isSigned) {
+    if (str[i] == '-') sign = -1, i ++;
+    else if (str[i] == '+') sign = 1, i++;
+  }
+  while(str[i] != '\0') {
+    if (!isdigit(str[i])) {
+      return 1;
+    } else {
+      ans = ans * 10 + str[i] - '0';
+    }
+    i += 1;
+  }
+  *result = sign * ans;
+  return 0;
+}
+
 static int cmd_c(char *args) {
   cpu_exec(-1);
   return 0;
 }
-
-
 static int cmd_q(char *args) {
   return -1;
 }
-
 static int cmd_help(char *args);
-
 static int cmd_si(char *args);
-
 static int cmd_info(char *args);
-
-static int cmd_info(char *args);
+static int cmd_x(char *args);
 
 static struct {
   const char *name;
@@ -56,6 +71,7 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
   { "si", "Single Instruction", cmd_si},
   { "info", "Display register or watchpoint information", cmd_info},
+  { "x", "Scan memory", cmd_x}
   /* TODO: Add more commands */
 
 };
@@ -87,20 +103,23 @@ static int cmd_help(char *args) {
 
 static int cmd_si(char *args) {
   char *arg = strtok(NULL, " ");
-  int i, n_steps;
+  int n_steps;
   if (arg == NULL) {
     cpu_exec(1);
   } else {
-    i = 0;
     n_steps = 0;
-    while(arg[i] != '\0') {
-      if (!isdigit(arg[i])) {
-        printf("Only unsigned int value can be accepted as step number\n");
-        return 0;
-      } else {
-        n_steps = n_steps * 10 + arg[i] - '0';
-      }
-      i += 1;
+    // while(arg[i] != '\0') {
+    //   if (!isdigit(arg[i])) {
+    //     printf("Only unsigned int value can be accepted as step number\n");
+    //     return 0;
+    //   } else {
+    //     n_steps = n_steps * 10 + arg[i] - '0';
+    //   }
+    //   i += 1;
+    // }
+    if (parse_int(arg, false, &n_steps)) {
+      printf("Only unsigned int value can be accepted as step number\n");
+      return 0;
     }
     arg = strtok(NULL, " ");
     if (arg != NULL) {
@@ -124,6 +143,38 @@ static int cmd_info(char *args){
   }
   else {
     printf("info r - display register values\n info w - display watchpoint info\n");
+  }
+  return 0;
+}
+
+static int cmd_x(char *args) {
+  char *arg = strtok(NULL, " ");
+  int num;
+  word_t i;
+  word_t data;
+  word_t addr;
+  if (arg == NULL) {
+    printf("Usage: x N EXPR\n");
+  } else {
+    num = 0;
+    if (parse_int(arg, true, &num)) {
+      printf("Only int value can be accepted as scan size\n");
+    } else {
+      const word_t base = 0x80000000UL;
+      if (num >= 0) {
+        for (i = 0; i < num; ++ i) {
+          addr = base + i * 4;
+          data = vaddr_read(addr, 4);
+          printf("0x%016lX : 0x%08lX\n", addr, data);
+        }
+      } else {
+        for (i = num; i < 0; ++ i) {
+          addr = base + i * 4;
+          data = vaddr_read(addr, 4);
+          printf("0x%016lX : 0x%08lX\n", addr, data);
+        }
+      }
+    }
   }
   return 0;
 }
