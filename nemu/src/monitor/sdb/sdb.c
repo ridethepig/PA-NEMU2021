@@ -168,7 +168,9 @@ static int cmd_x(char *args) {
           printf("0x%016lX : 0x%08lX\n", addr, data);
         }
       } else {
+        printf("neg\n");
         for (i = num; i < 0; ++ i) {
+          printf("%ld\n", i);
           addr = base + i * 4;
           data = vaddr_read(addr, 4);
           printf("0x%016lX : 0x%08lX\n", addr, data);
