@@ -46,6 +46,7 @@ static int parse_int(const char* str, const bool isSigned, int * result) {
     i += 1;
   }
   *result = sign * ans;
+  printf("result: %d\n", *result);
   return 0;
 }
 
