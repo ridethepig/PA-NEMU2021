@@ -8,8 +8,8 @@
 #include <assert.h>
 
 enum {
-  TK_NOTYPE = 256, TK_EQ,
-  TK_DEC, TK_HEX,
+  TK_NOTYPE = 256, TK_EQ, TK_NEQ, TK_AND,
+  TK_DEC, TK_HEX, TK_NEG, TK_DEREF, TK_REG,
   /* TODO: Add more token types */
 
 };
@@ -40,6 +40,10 @@ static struct rule {
   {"[0-9]+", TK_DEC},     // decimal, this must be overriden by hex, so no problem
   {"\\(", '('},
   {"\\)", ')'},
+  {"\\$[[:lower:][:digit:]]+", TK_REG}, // to make it isa independant, allow all kinds of combination
+  {"&&", TK_AND},
+  {"!=", TK_NEQ},
+
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -97,8 +101,8 @@ static bool make_token(char *e) {
 
         switch (rules[i].token_type) {
           case TK_NOTYPE: break;
-          case TK_DEC:
-          case TK_HEX: 
+          case TK_DEC: case TK_HEX:
+          case TK_REG:
             tokens[nr_token].type = rules[i].token_type;
             tokens[nr_token].str = (char*)malloc(substr_len + 1);
             strncpy(tokens[nr_token].str, substr_start, substr_len);
@@ -106,11 +110,11 @@ static bool make_token(char *e) {
             nr_token ++;
             break;
           case '+': case '-': case '*': case '/': case '(': case ')':
+          case TK_AND: case TK_EQ: case TK_NEQ:
             tokens[nr_token].type = rules[i].token_type;
             tokens[nr_token].str = NULL;
             nr_token ++;
-            break;
-          case TK_EQ: TODO();
+            break;          
           default: TODO();
         }
 
@@ -126,6 +130,7 @@ static bool make_token(char *e) {
 
   return true;
 }
+
 /*Parse Hex String into word_t
 * Assume the format is 0x.....
 * We are not doing sanity check, cause we have done regex before
@@ -174,11 +179,19 @@ word_t eval(int l, int r, bool *success) {
       *success = true;
       // printf("parsing hex: %016lX\n", parse_hex(tokens[l].str));
       return parse_hex(tokens[l].str);
-    } else if (tokens[r].type == TK_DEC) {
+    } 
+    else if (tokens[l].type == TK_DEC) {
       *success = true;
       // printf("parsing dec: %ld\n", parse_dec(tokens[l].str));
       return parse_dec(tokens[l].str);
-    } else {
+    } 
+    else if (tokens[l].type == TK_REG) {
+      result = isa_reg_str2val(&(tokens[l].str[1]), *success);
+      if (*success == false) 
+        printf("No such register: %s\n", tokens[l].str);
+      return result;
+    }
+    else {
       printf("Leaf should be a number or register\n");
       *success = false;
       return 0;
@@ -260,13 +273,31 @@ static void release_token() {
   }
 }
 
+static void print_token() {
+  int i;
+  printf("Token Stream:\n");
+  for (i = 0; i < nr_token; ++ i) {
+    printf("(%d,%s),", tokens[i].type, tokens[i].str == NULL ? "null" : tokens[i].str);
+  }
+  puts("");
+}
+
 word_t expr(char *e, bool *success) {
   word_t result = 0;
   bool _success = true;
+  int i;
+
   if (!make_token(e)) {
     *success = false;
     return 0;
   }
+  print_token();
+  for (i = 0; i < nr_token; ++ i) {
+    if (tokens[i].type == '-' && (i == 0 || (tokens[i].type != TK_REG && tokens[i].type != TK_HEX && tokens[i].type != TK_DEC))) {
+      tokens[i].type = TK_NEG;
+    }
+  }
+  print_token();
   result = eval(0, nr_token - 1, &_success);
   release_token(); // 'cause these strings are allocated dynamically, have to free them avoid leak
   *success = _success;
