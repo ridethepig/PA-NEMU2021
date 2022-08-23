@@ -1,6 +1,6 @@
 #include <isa.h>
 #include <memory/paddr.h>
-
+#include "sdb/sdb.h"
 void init_rand();
 void init_log(const char *log_file);
 void init_mem();
@@ -85,7 +85,7 @@ static int parse_args(int argc, char *argv[]) {
 
 void init_monitor(int argc, char *argv[]) {
   /* Perform some global initialization. */
-
+  bool expr_succ;
   /* Parse arguments. */
   parse_args(argc, argv);
 
@@ -112,7 +112,8 @@ void init_monitor(int argc, char *argv[]) {
 
   /* Initialize the simple debugger. */
   init_sdb();
-
+  printf("= %ld\n", expr("1 * 2 * 100 * -0x20 / 0", &expr_succ));
+  exit(0);
   IFDEF(CONFIG_ITRACE, init_disasm(
     MUXDEF(CONFIG_ISA_x86,     "i686",
     MUXDEF(CONFIG_ISA_mips32,  "mipsel",
