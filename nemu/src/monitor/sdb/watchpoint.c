@@ -87,9 +87,9 @@ void wp_print() {
     printf("No watchpoint\n");
   }
   else {
-    printf("NO\t|\tOld Value\t|\t Expr\n");
+    printf("|\tNO\t|     Old Value      |\t Expr\n");
     while (ptr) {
-      printf("%d\t|%20ld\t|%s\n", ptr->NO, ptr->old_val, ptr->expr);
+      printf("|\t%d\t|%20ld|  %s\n", ptr->NO, ptr->old_val, ptr->expr);
       ptr = ptr->next;
     }
   }

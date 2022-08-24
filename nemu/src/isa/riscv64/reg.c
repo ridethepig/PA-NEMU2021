@@ -14,6 +14,7 @@ void isa_reg_display() {
   for (i = 0; i < 32; ++ i) {
     printf("| %s\t| 0x%016lX | %20ld |\n", regs[i], gpr(i), gpr(i));
   }
+  printf("| pc\t| 0x%016lX |\n", cpu.pc);
 }
 
 /*
@@ -25,6 +26,10 @@ word_t isa_reg_str2val(const char *s, bool *success) {
     *success = true;
     return 0;
   } // better special judge 0
+  if (strcmp(s, "pc") == 0) {
+    *success = true;
+    return cpu.pc;
+  }
   for (i = 0; i < 32; ++ i) {
     if (strcmp(s, regs[i]) == 0) {
       *success = true;

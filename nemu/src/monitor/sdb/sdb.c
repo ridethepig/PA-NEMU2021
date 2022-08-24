@@ -62,6 +62,8 @@ static int cmd_si(char *args);
 static int cmd_info(char *args);
 static int cmd_x(char *args);
 static int cmd_p(char *args);
+static int cmd_px(char *args);
+static int cmd_pu(char *args);
 static int cmd_w(char *args);
 static int cmd_d(char *args);
 
@@ -77,6 +79,8 @@ static struct {
   { "info", "Display register or watchpoint information", cmd_info},
   { "x", "Scan memory", cmd_x},
   { "p", "Print expression", cmd_p},
+  { "pu", "Print expression in unsigned", cmd_pu},
+  { "px", "Print expression in hex", cmd_px},
   { "w", "Watch expression value, pause when value changed", cmd_w},
   { "d", "Delete watchpoint by its NO", cmd_d},
 };
@@ -201,6 +205,30 @@ static int cmd_p(char *args) {
   val = expr(args, &success);
   if (success)
     printf("%ld\n", val);
+  else
+    printf("Failed to eval expr\n");
+  return 0;
+}
+
+static int cmd_px(char *args) {
+  word_t val;
+  bool success;
+  assert(args != NULL);
+  val = expr(args, &success);
+  if (success)
+    printf("0x%lX\n", val);
+  else
+    printf("Failed to eval expr\n");
+  return 0;
+}
+
+static int cmd_pu(char *args) {
+  word_t val;
+  bool success;
+  assert(args != NULL);
+  val = expr(args, &success);
+  if (success)
+    printf("%lu\n", val);
   else
     printf("Failed to eval expr\n");
   return 0;
