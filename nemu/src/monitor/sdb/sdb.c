@@ -29,7 +29,7 @@ static char* rl_gets() {
   return line_read;
 }
 
-static int parse_int(const char* str, const bool isSigned, int * result) {
+static int parse_int(const char* str, const bool isSigned, bool * success) {
   int ans = 0;
   int sign = 1;
   int i = 0;
@@ -39,14 +39,15 @@ static int parse_int(const char* str, const bool isSigned, int * result) {
   }
   while(str[i] != '\0') {
     if (!isdigit(str[i])) {
-      return 1;
+      *success = false;
+      return 0;
     } else {
       ans = ans * 10 + str[i] - '0';
     }
     i += 1;
   }
-  *result = sign * ans;
-  return 0;
+  *success = true;
+  return sign * ans;
 }
 
 static int cmd_c(char *args) {
@@ -61,7 +62,8 @@ static int cmd_si(char *args);
 static int cmd_info(char *args);
 static int cmd_x(char *args);
 static int cmd_p(char *args);
-
+static int cmd_w(char *args);
+static int cmd_d(char *args);
 
 static struct {
   const char *name;
@@ -75,8 +77,8 @@ static struct {
   { "info", "Display register or watchpoint information", cmd_info},
   { "x", "Scan memory", cmd_x},
   { "p", "Print expression", cmd_p},
-  /* TODO: Add more commands */
-
+  { "w", "Watch expression value, pause when value changed", cmd_w},
+  { "d", "Delete watchpoint by its NO", cmd_d},
 };
 
 #define NR_CMD ARRLEN(cmd_table)
@@ -106,11 +108,12 @@ static int cmd_help(char *args) {
 
 static int cmd_si(char *args) {
   char *arg = strtok(NULL, " ");
+  bool success;
   int n_steps;
   if (arg == NULL) {
     cpu_exec(1);
   } else {
-    n_steps = 0;
+    n_steps = parse_int(arg, false, &success);
     // while(arg[i] != '\0') {
     //   if (!isdigit(arg[i])) {
     //     printf("Only unsigned int value can be accepted as step number\n");
@@ -120,7 +123,7 @@ static int cmd_si(char *args) {
     //   }
     //   i += 1;
     // }
-    if (parse_int(arg, false, &n_steps)) {
+    if (success) {
       printf("Only unsigned int value can be accepted as step number\n");
       return 0;
     }
@@ -142,7 +145,7 @@ static int cmd_info(char *args){
     isa_reg_display();
   }
   else if (strcmp("w", arg) == 0) {
-    printf("not implemented yet\n");
+    wp_print();
   }
   else {
     printf("info r - display register values\n info w - display watchpoint info\n");
@@ -163,8 +166,8 @@ static int cmd_x(char *args) {
   if (arg == NULL) {
     printf("Usage: x N EXPR\n");
   } else {
-    num = 0;
-    if (parse_int(arg, true, &num)) {
+    num = parse_int(arg, true, &success);
+    if (!success) {
       printf("Only int value can be accepted as scan size\n");
     } else {
       base = expr(expr_str, &success);
@@ -201,6 +204,44 @@ static int cmd_p(char *args) {
   else
     printf("Failed to eval expr\n");
   return 0;
+}
+
+static int cmd_w(char *args) {
+#ifdef CONFIG_WATCHPOINT
+  bool success;
+  WP* wp;
+  wp = wp_new(args, &success);
+  if (!success) {
+    printf("Failed to create watchpoint with expr \'%s\'\n", args);
+    return 1;
+  } else {
+    printf("Created watchpoint NO %d, now \'%s\'=%ld\n", wp->NO, wp->expr, wp->old_val);
+    return 0;
+  }
+#else
+  printf("watchpoint function turned off\n");
+#endif
+}
+
+static int cmd_d(char *args) {
+#ifdef CONFIG_WATCHPOINT
+  bool success;
+  int NO;
+  NO = parse_int(args, false, &success);
+  if (!success) {
+    printf("Usage: d N, N is the number of the watchpoint\n");
+    return 1;
+  }
+  success = wp_free(NO);
+  if (!success) {
+    printf("No such watchpoint NO %d\n", NO);
+    return 1;
+  }
+  printf("Removed watchpoint NO %d\n", NO);
+  return 0;
+#else
+  printf("watchpoint function turned off\n");
+#endif
 }
 
 void sdb_set_batch_mode() {
