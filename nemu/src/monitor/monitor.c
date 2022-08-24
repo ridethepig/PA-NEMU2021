@@ -112,7 +112,9 @@ void init_monitor(int argc, char *argv[]) {
 
   /* Initialize the simple debugger. */
   init_sdb();
-  printf("= %ld\n", expr("1 * 2 * 100 * ----0x20 / 10 && 10 - 10 == 0", &expr_succ));
+  assert(isa_reg_str2val_set("s0", 0x80000000));
+  isa_reg_display();
+  printf("= %ld\n", expr("1 * 2 * *($s0 + 16) * (0x20 + $s0) - $s0 / 10 && 10 - 10 == 0", &expr_succ));
   exit(0);
   IFDEF(CONFIG_ITRACE, init_disasm(
     MUXDEF(CONFIG_ISA_x86,     "i686",

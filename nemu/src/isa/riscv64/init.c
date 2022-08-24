@@ -9,6 +9,7 @@ static const uint32_t img [] = {
   0x0102b503,  // ld  a0,16(t0)
   0x0000006b,  // nemu_trap
   0xdeadbeef,  // some data
+  0xcafebabe,
 };
 
 static void restart() {

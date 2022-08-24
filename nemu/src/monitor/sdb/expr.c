@@ -1,5 +1,6 @@
 #include <isa.h>
 #include <common.h>
+#include <memory/vaddr.h>
 /* We use the POSIX regex functions to process regular expressions.
  * Type 'man regex' for more information about POSIX regex functions.
  */
@@ -93,28 +94,15 @@ static bool make_token(char *e) {
 
         position += substr_len;
 
-        /* TODO: Now a new token is recognized with rules[i]. Add codes
-         * to record the token in the array `tokens'. For certain types
-         * of tokens, some extra actions should be performed.
-         */
-
         switch (rules[i].token_type) {
-          case TK_NOTYPE: break;
-          case TK_DEC: case TK_HEX:
-          case TK_REG:
+          case TK_NOTYPE: break; 
+          default:
             tokens[nr_token].type = rules[i].token_type;
             tokens[nr_token].str = (char*)malloc(substr_len + 1);
             strncpy(tokens[nr_token].str, substr_start, substr_len);
             tokens[nr_token].str[substr_len] = '\0';
             nr_token ++;
             break;
-          case '+': case '-': case '*': case '/': case '(': case ')':
-          case TK_AND: case TK_EQ: case TK_NEQ:
-            tokens[nr_token].type = rules[i].token_type;
-            tokens[nr_token].str = NULL;
-            nr_token ++;
-            break;          
-          default: TODO();
         }
 
         break;
@@ -130,9 +118,10 @@ static bool make_token(char *e) {
   return true;
 }
 
-/*Parse Hex String into word_t
-* Assume the format is 0x.....
-* We are not doing sanity check, cause we have done regex before
+/** 
+ * Parse Hex String into word_t
+ * Assume the format is 0x.....
+ * We are not doing sanity check, cause we have done regex before
 */
 static word_t parse_hex(const char * str) {
   int i = 2;// we can assume the first two chars to be '0x', 'cause using regex
@@ -147,7 +136,7 @@ static word_t parse_hex(const char * str) {
   return result;
 }
 
-/*Parse Decimal String into word_t
+/** Parse Decimal String into word_t
 * We are not doing sanity check, cause we have done regex before
 */
 static word_t parse_dec(const char * str) {
@@ -160,10 +149,12 @@ static word_t parse_dec(const char * str) {
   return result;
 }
 
+/**
+ * return the precedence level of the operator
+ */
 static int precedence(int op) {
   switch (op)
   {
-  
   case '(': case ')':
     return 1;
   case TK_NEG: case TK_DEREF:
@@ -216,6 +207,7 @@ word_t eval(int l, int r, bool *success) {
     } 
     else if (tokens[l].type == TK_REG) {
       result = isa_reg_str2val(&(tokens[l].str[1]), success);
+      // printf("getting register %s: %ld\n", &(tokens[l].str[1]), result);
       if (*success == false) 
         printf("No such register: %s\n", tokens[l].str);
       return result;
@@ -266,9 +258,15 @@ word_t eval(int l, int r, bool *success) {
       switch (tokens[l].type)
       {
       case TK_NEG: return -eval(l+1, r, success); // all operations here are regarded as unsigned, so, neg is no recommended
-      case TK_DEREF: TODO();
+      case TK_DEREF: 
+        result = eval(l+1, r, success);
+        if (*success)
+          return vaddr_read(result, 8);
+        else
+          return 0;
+      break;
       default:
-        printf("Unknown Single Operator: %d\n", tokens[i].type);
+        printf("Unknown Single Operator: %d\n", tokens[l].type);
         *success = false;
         return 0;
       }
@@ -336,7 +334,7 @@ word_t eval(int l, int r, bool *success) {
         assert(0);
         break;
       }
-      printf("%ld %c %ld \n", eval1, (char)tokens[main_op_pos].type, eval2);
+      printf("%lX %s %lX \n", eval1, tokens[main_op_pos].str, eval2);
       *success = true;
       return result;
     }
@@ -356,12 +354,10 @@ static void print_token() {
   int i;
   printf("Token Stream:\n");
   for (i = 0; i < nr_token; ++ i) {
-    printf("(%d,%s),", tokens[i].type, tokens[i].str == NULL ? "null" : tokens[i].str);
+    printf("(%d,\'%s\'),", tokens[i].type, tokens[i].str == NULL ? "null" : tokens[i].str);
   }
   puts("");
 }
-
-
 
 word_t expr(char *e, bool *success) {
   word_t result = 0;
@@ -375,10 +371,22 @@ word_t expr(char *e, bool *success) {
   print_token();
   for (i = 0; i < nr_token; ++ i) {
     // no problem with that i-1, using shortcut
-    if (tokens[i].type == '-' && (i == 0 || tokens[i-1].type == '(' || !EVAL_IS_OPERAND(tokens[i-1].type))) {
+    if (tokens[i].type == '-' && 
+          ( 
+            i == 0                  || 
+            tokens[i-1].type == '(' || 
+            (!EVAL_IS_OPERAND(tokens[i-1].type) && tokens[i-1].type != ')')
+          )
+        ) {
       tokens[i].type = TK_NEG;
     }
-    if (tokens[i].type == '*' && (i == 0 || tokens[i-1].type == '(' || !EVAL_IS_OPERAND(tokens[i-1].type))) {
+    if (tokens[i].type == '*' && 
+          ( 
+            i == 0                  ||
+            tokens[i-1].type == '(' ||
+            (!EVAL_IS_OPERAND(tokens[i-1].type) && tokens[i-1].type != ')')
+          )
+        ) {
       tokens[i].type = TK_DEREF;
     }
   }

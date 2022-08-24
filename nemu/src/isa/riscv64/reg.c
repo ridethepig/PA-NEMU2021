@@ -10,9 +10,9 @@ const char *regs[] = {
 
 void isa_reg_display() {
   int i;
-  // printf("| register | Hex | Dec |\n");
+  printf("| reg\t|         Hex        |          Dec         |\n");
   for (i = 0; i < 32; ++ i) {
-    printf("| %s | 0x%016lX | %20ld |\n", regs[i], gpr(i), gpr(i));
+    printf("| %s\t| 0x%016lX | %20ld |\n", regs[i], gpr(i), gpr(i));
   }
 }
 
@@ -21,7 +21,7 @@ void isa_reg_display() {
 */
 word_t isa_reg_str2val(const char *s, bool *success) {
   int i;
-  if (strcmp(s, "0") == 0 || strcmp(s, "zero")) {
+  if (strcmp(s, "0") == 0 || strcmp(s, "zero") == 0) {
     *success = true;
     return 0;
   } // better special judge 0
@@ -33,4 +33,15 @@ word_t isa_reg_str2val(const char *s, bool *success) {
   }
   *success = false;
   return 0;
+}
+
+bool isa_reg_str2val_set(const char *s, word_t value) {
+  int i;
+  for (i = 1; i < 32; ++ i) {
+    if (strcmp(s, regs[i]) == 0) {
+      gpr(i) = value;
+      return true;
+    }
+  }
+  return false;
 }
