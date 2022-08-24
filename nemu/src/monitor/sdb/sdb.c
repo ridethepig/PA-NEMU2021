@@ -60,6 +60,8 @@ static int cmd_help(char *args);
 static int cmd_si(char *args);
 static int cmd_info(char *args);
 static int cmd_x(char *args);
+static int cmd_p(char *args);
+
 
 static struct {
   const char *name;
@@ -71,7 +73,8 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
   { "si", "Single Instruction", cmd_si},
   { "info", "Display register or watchpoint information", cmd_info},
-  { "x", "Scan memory", cmd_x}
+  { "x", "Scan memory", cmd_x},
+  { "p", "Print expression", cmd_p},
   /* TODO: Add more commands */
 
 };
@@ -147,12 +150,16 @@ static int cmd_info(char *args){
   return 0;
 }
 
+// TODO: memory access range check
 static int cmd_x(char *args) {
   char *arg = strtok(NULL, " ");
+  char *expr_str = arg + strlen(arg) + 1;
   int num;
   word_t i;
   word_t data;
   word_t addr;
+  word_t base;
+  bool success;
   if (arg == NULL) {
     printf("Usage: x N EXPR\n");
   } else {
@@ -160,22 +167,39 @@ static int cmd_x(char *args) {
     if (parse_int(arg, true, &num)) {
       printf("Only int value can be accepted as scan size\n");
     } else {
-      const word_t base = 0x80000010UL;
-      if (num >= 0) {
-        for (i = 0; i < num; ++ i) {
-          addr = base + i * 4;
-          data = vaddr_read(addr, 4);
-          printf("0x%016lX : 0x%08lX\n", addr, data);
+      base = expr(expr_str, &success);
+      if (success) {
+        if (num >= 0) {
+          for (i = 0; i < num; ++ i) {
+            addr = base + i * 4;
+            data = vaddr_read(addr, 4);
+            printf("0x%016lX : 0x%08lX\n", addr, data);
+          }
+        } else {
+          for (i = -num; i > 0; -- i) {
+            addr = base - i * 4;
+            data = vaddr_read(addr, 4);
+            printf("0x%016lX : 0x%08lX\n", addr, data);
+          }
         }
-      } else {
-        for (i = -num; i > 0; -- i) {
-          addr = base - i * 4;
-          data = vaddr_read(addr, 4);
-          printf("0x%016lX : 0x%08lX\n", addr, data);
-        }
+      }
+      else {
+        printf("Failed to eval address expr\n");
       }
     }
   }
+  return 0;
+}
+
+static int cmd_p(char *args) {
+  word_t val;
+  bool success;
+  assert(args != NULL);
+  val = expr(args, &success);
+  if (success)
+    printf("%ld\n", val);
+  else
+    printf("Failed to eval expr\n");
   return 0;
 }
 

@@ -89,8 +89,8 @@ static bool make_token(char *e) {
         char *substr_start = e + position;
         int substr_len = pmatch.rm_eo;
 
-        Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s",
-            i, rules[i].regex, position, substr_len, substr_len, substr_start);
+        // Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s",
+        //     i, rules[i].regex, position, substr_len, substr_len, substr_start);
 
         position += substr_len;
 
@@ -175,6 +175,31 @@ static int precedence(int op) {
     printf("UnKnown OP No.: %d\n", op);
     assert(0); // N't have to handle exception, if unknown operator occurs here, must be bugs
     break;
+  }
+}
+
+static void preprocess_token() {
+  int i;
+  for (i = 0; i < nr_token; ++ i) {
+    // no problem with that i-1, using shortcut
+    if (tokens[i].type == '-' && 
+          ( 
+            i == 0                  || 
+            tokens[i-1].type == '(' || 
+            (!EVAL_IS_OPERAND(tokens[i-1].type) && tokens[i-1].type != ')')
+          )
+        ) {
+      tokens[i].type = TK_NEG;
+    }
+    if (tokens[i].type == '*' && 
+          ( 
+            i == 0                  ||
+            tokens[i-1].type == '(' ||
+            (!EVAL_IS_OPERAND(tokens[i-1].type) && tokens[i-1].type != ')')
+          )
+        ) {
+      tokens[i].type = TK_DEREF;
+    }
   }
 }
 
@@ -334,7 +359,7 @@ word_t eval(int l, int r, bool *success) {
         assert(0);
         break;
       }
-      printf("%lX %s %lX \n", eval1, tokens[main_op_pos].str, eval2);
+      // printf("%lX %s %lX \n", eval1, tokens[main_op_pos].str, eval2);
       *success = true;
       return result;
     }
@@ -350,6 +375,7 @@ static void release_token() {
   }
 }
 
+#ifdef DEBUG_EXPR
 static void print_token() {
   int i;
   printf("Token Stream:\n");
@@ -358,39 +384,19 @@ static void print_token() {
   }
   puts("");
 }
+#endif
 
 word_t expr(char *e, bool *success) {
   word_t result = 0;
   bool _success = true;
-  int i;
 
   if (!make_token(e)) {
     *success = false;
     return 0;
   }
-  print_token();
-  for (i = 0; i < nr_token; ++ i) {
-    // no problem with that i-1, using shortcut
-    if (tokens[i].type == '-' && 
-          ( 
-            i == 0                  || 
-            tokens[i-1].type == '(' || 
-            (!EVAL_IS_OPERAND(tokens[i-1].type) && tokens[i-1].type != ')')
-          )
-        ) {
-      tokens[i].type = TK_NEG;
-    }
-    if (tokens[i].type == '*' && 
-          ( 
-            i == 0                  ||
-            tokens[i-1].type == '(' ||
-            (!EVAL_IS_OPERAND(tokens[i-1].type) && tokens[i-1].type != ')')
-          )
-        ) {
-      tokens[i].type = TK_DEREF;
-    }
-  }
-  print_token();
+  // print_token();
+  preprocess_token();
+  // print_token();
   result = eval(0, nr_token - 1, &_success);
   release_token(); // 'cause these strings are allocated dynamically, have to free them avoid leak
   *success = _success;
