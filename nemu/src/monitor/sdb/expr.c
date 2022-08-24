@@ -7,29 +7,29 @@
 #include <string.h>
 #include <assert.h>
 
-enum {
-  TK_NOTYPE = 256, TK_EQ, TK_NEQ, TK_AND,
-  TK_DEC, TK_HEX, TK_NEG, TK_DEREF, TK_REG,
-  /* TODO: Add more token types */
-
-};
+#define EVAL_IS_OPERAND(x) (x == TK_DEC || x == TK_HEX || x == TK_REG)
 
 enum {
-  EVAL_NOERROR = 0,
-  EVAL_LEAF,
-  EVAL_BRACKET,
-  EVAL_OP,
+  TK_NOTYPE = 256, 
+  TK_EQ, 
+  TK_NEQ, 
+  TK_DEC,
+  TK_HEX,
+  TK_NEG,
+  TK_DEREF,
+  TK_REG,
+  TK_AND,
+  TK_OR,
+  TK_LE,
+  TK_LT,
+  TK_GE,
+  TK_GT,
 };
 
 static struct rule {
   const char *regex;
   int token_type;
 } rules[] = {
-
-  /* TODO: Add more rules.
-   * Pay attention to the precedence level of different rules.
-   */
-
   {" +", TK_NOTYPE},    // spaces
   {"\\+", '+'},         // plus
   {"==", TK_EQ},        // equal
@@ -43,7 +43,6 @@ static struct rule {
   {"\\$[[:lower:][:digit:]]+", TK_REG}, // to make it isa independant, allow all kinds of combination
   {"&&", TK_AND},
   {"!=", TK_NEQ},
-
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -161,10 +160,38 @@ static word_t parse_dec(const char * str) {
   return result;
 }
 
+static int precedence(int op) {
+  switch (op)
+  {
+  
+  case '(': case ')':
+    return 1;
+  case TK_NEG: case TK_DEREF:
+    return 2;
+  case '*': case '/':
+    return 3;
+  case '+': case '-':
+    return 4;
+  case TK_LE: case TK_GE: case TK_LT: case TK_GT:
+    return 6;
+  case TK_EQ: case TK_NEQ:
+    return 7;
+  case TK_AND:
+    return 11;
+  case TK_OR:
+    return 12;
+  default:
+    printf("UnKnown OP No.: %d\n", op);
+    assert(0); // N't have to handle exception, if unknown operator occurs here, must be bugs
+    break;
+  }
+}
+
 word_t eval(int l, int r, bool *success) {
-  int main_op_pos = l;
-  int lowest_prio = 2; // +,- : 0; *,/ : 1; 
+  int main_op_pos = -1;
+  int lowest_prio = 0; // 0 --- the highest level
   int bracket_count = 0;
+  int current_prio;
   int i;
   word_t result;
   word_t eval1, eval2;
@@ -174,6 +201,8 @@ word_t eval(int l, int r, bool *success) {
     printf("Eval failed @ token %d\n", l);
     return 0;
   }
+
+  // Process leaf nodes, constants and regs
   if (l == r) {
     if (tokens[l].type == TK_HEX) {
       *success = true;
@@ -186,7 +215,7 @@ word_t eval(int l, int r, bool *success) {
       return parse_dec(tokens[l].str);
     } 
     else if (tokens[l].type == TK_REG) {
-      result = isa_reg_str2val(&(tokens[l].str[1]), *success);
+      result = isa_reg_str2val(&(tokens[l].str[1]), success);
       if (*success == false) 
         printf("No such register: %s\n", tokens[l].str);
       return result;
@@ -196,10 +225,13 @@ word_t eval(int l, int r, bool *success) {
       *success = false;
       return 0;
     }
-  } else if (tokens[l].type == '(' && tokens[r].type == ')') {
+  }
+  // Shake off a pair of parentheses
+  else if (tokens[l].type == '(' && tokens[r].type == ')') {
     return eval(l + 1, r - 1, success);
-  } else {
-    // TODO: negative operator support
+  } 
+  else {
+    // process operator precedence, find main operator(LTR combination)
     for (i = l; i <= r; ++ i) {
       switch (tokens[i].type)
       {
@@ -209,58 +241,105 @@ word_t eval(int l, int r, bool *success) {
       case ')':
         bracket_count --;
       break;
-      case '+': case '-':
-        if (bracket_count == 0) {
-          lowest_prio = 0;
-          main_op_pos = i;
-        }
-      break;
-      case '*': case '/':
-        if (bracket_count == 0 && lowest_prio >= 1) {
-          lowest_prio = 1;
-          main_op_pos = i;
-        }
-      break;
+      case TK_DEC: case TK_HEX: case TK_REG:
+      break; // Ignore Leaf
+      case TK_DEREF: case TK_NEG:
+      break; // Not process RTL operator this time
       default:
-        break;
+        current_prio = precedence(tokens[i].type);
+        if (bracket_count == 0 && current_prio >= lowest_prio) {
+          lowest_prio = current_prio;
+          main_op_pos = i;
+        }
+        break;// all kinds of operators
       }
     }
-
+    // handle exception
     if (bracket_count) {
       printf("unbalanced parentheses\n");
       *success = false;
       return 0;
     }
-    eval1 = eval(l, main_op_pos - 1, success); 
-    eval2 = eval(main_op_pos + 1, r, success);
-    if (*success == false) return 0; // Stop evalutation process at the first error
-    printf("%ld %c %ld \n", eval1, (char)tokens[main_op_pos].type, eval2);
-    switch (tokens[main_op_pos].type)
-    {
-    case '+':
-      result = eval1 + eval2;
-      break;
-    case '-':
-      result = eval1 - eval2;
-      break;
-    case '*':
-      result = eval1 * eval2;
-      break;
-    case '/':
-      if (eval2 == 0) {
-        printf("Dividing zero\n");
+    // different process for RTL and LTR
+    if (main_op_pos == -1) { 
+      // no main operator found, but not a leaf, so try RTL operators
+      switch (tokens[l].type)
+      {
+      case TK_NEG: return -eval(l+1, r, success); // all operations here are regarded as unsigned, so, neg is no recommended
+      case TK_DEREF: TODO();
+      default:
+        printf("Unknown Single Operator: %d\n", tokens[i].type);
         *success = false;
         return 0;
-      } else {
-        result = eval1 / eval2;
       }
-      break;
-    default:
-      assert(0);
-      break;
     }
-    *success = true;
-    return result;
+    else {
+      // normal binary operator
+      // to simulate shortcut in || and &&, we have to dicide whether to eval the other side by operator
+      switch (tokens[main_op_pos].type)
+      {
+      case '+':
+        eval1 = eval(l, main_op_pos - 1, success); 
+        eval2 = eval(main_op_pos + 1, r, success);
+        if (*success == false) return 0; // Stop evalutation process at the first error
+        result = eval1 + eval2;
+        break;
+      case '-':
+        eval1 = eval(l, main_op_pos - 1, success); 
+        eval2 = eval(main_op_pos + 1, r, success);
+        if (*success == false) return 0;
+        result = eval1 - eval2;
+        break;
+      case '*':
+        eval1 = eval(l, main_op_pos - 1, success); 
+        eval2 = eval(main_op_pos + 1, r, success);
+        if (*success == false) return 0;
+        result = eval1 * eval2;
+        break;
+      case '/':
+        eval1 = eval(l, main_op_pos - 1, success); 
+        eval2 = eval(main_op_pos + 1, r, success);
+        if (*success == false) return 0;
+        if (eval2 == 0) {
+          printf("Dividing zero\n");
+          *success = false;
+          return 0;
+        } else {
+          result = eval1 / eval2;
+        }
+        break;
+      case TK_AND:
+        eval1 = eval(l, main_op_pos - 1, success);
+        if (*success == false) return 0;
+        if (eval1 == 0) {
+          result = 0;
+        }
+        else {
+          eval2 = eval(main_op_pos + 1, r, success);
+          if (*success == false) return 0;
+          result = eval2 != 0;
+        }
+        break;
+      case TK_EQ:
+        eval1 = eval(l, main_op_pos - 1, success); 
+        eval2 = eval(main_op_pos + 1, r, success);
+        if (*success == false) return 0;
+        result = eval1 == eval2;
+        break;
+      case TK_NEQ:
+        eval1 = eval(l, main_op_pos - 1, success); 
+        eval2 = eval(main_op_pos + 1, r, success);
+        if (*success == false) return 0;
+        result = eval1 != eval2;
+        break;
+      default:
+        assert(0);
+        break;
+      }
+      printf("%ld %c %ld \n", eval1, (char)tokens[main_op_pos].type, eval2);
+      *success = true;
+      return result;
+    }
   }
 }
 
@@ -282,6 +361,8 @@ static void print_token() {
   puts("");
 }
 
+
+
 word_t expr(char *e, bool *success) {
   word_t result = 0;
   bool _success = true;
@@ -293,8 +374,12 @@ word_t expr(char *e, bool *success) {
   }
   print_token();
   for (i = 0; i < nr_token; ++ i) {
-    if (tokens[i].type == '-' && (i == 0 || (tokens[i].type != TK_REG && tokens[i].type != TK_HEX && tokens[i].type != TK_DEC))) {
+    // no problem with that i-1, using shortcut
+    if (tokens[i].type == '-' && (i == 0 || tokens[i-1].type == '(' || !EVAL_IS_OPERAND(tokens[i-1].type))) {
       tokens[i].type = TK_NEG;
+    }
+    if (tokens[i].type == '*' && (i == 0 || tokens[i-1].type == '(' || !EVAL_IS_OPERAND(tokens[i-1].type))) {
+      tokens[i].type = TK_DEREF;
     }
   }
   print_token();
