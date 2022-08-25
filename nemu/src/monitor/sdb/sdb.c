@@ -248,6 +248,7 @@ static int cmd_w(char *args) {
   }
 #else
   printf("watchpoint function turned off\n");
+  return 0;
 #endif
 }
 
@@ -269,6 +270,7 @@ static int cmd_d(char *args) {
   return 0;
 #else
   printf("watchpoint function turned off\n");
+  return 0;
 #endif
 }
 
