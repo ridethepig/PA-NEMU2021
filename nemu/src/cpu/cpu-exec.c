@@ -12,6 +12,54 @@
  */
 #define MAX_INSTR_TO_PRINT 10
 
+#ifdef CONFIG_ITRACE
+#define RINGBUF_SIZE 20
+#define DASM_PRINTBUF_SIZE 128
+typedef struct
+{
+  word_t pc[RINGBUF_SIZE];
+  word_t instr[RINGBUF_SIZE];
+  int ptr;
+} IRINGBUF;
+static IRINGBUF iringbuf;
+
+static inline void iringbuf_push(word_t instr, word_t pc) {
+  iringbuf.instr[iringbuf.ptr] = instr;
+  iringbuf.pc[iringbuf.ptr] = pc;
+  iringbuf.ptr = (iringbuf.ptr + 1) % RINGBUF_SIZE;
+}
+
+static void dasm_sprint(char* dst, word_t instr, word_t pc) {
+  char *p = dst;
+  p += snprintf(p, DASM_PRINTBUF_SIZE, FMT_WORD ":", pc);
+  const int ilen = 4; // just ignore CISC condition
+  int i;
+  uint8_t *instr_arr = (uint8_t *)&instr;
+  for (i = 0; i < ilen; i ++) {
+    p += snprintf(p, 4, " %02x", instr_arr[i]);
+  }
+  *p = '\t'; p ++;
+  void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
+  disassemble(p, dst + DASM_PRINTBUF_SIZE - p, pc, (uint8_t *)&instr, ilen);
+}
+
+static inline void iringbuf_print() {
+  int i;
+  char dasm_printbuf[DASM_PRINTBUF_SIZE];
+  printf("---------- Instruction Trace ----------\n");
+  for (i = iringbuf.ptr; i < RINGBUF_SIZE; ++ i) {
+    dasm_sprint(dasm_printbuf, iringbuf.instr[i], iringbuf.pc[i]);
+    puts(dasm_printbuf);
+  }
+  for (i = 0; i < iringbuf.ptr; ++ i) {
+    dasm_sprint(dasm_printbuf, iringbuf.instr[i], iringbuf.pc[i]);
+    puts(dasm_printbuf);
+  }
+  printf("----------------- End -----------------\n");
+}
+
+#endif
+
 CPU_state cpu = {};
 uint64_t g_nr_guest_instr = 0;
 static uint64_t g_timer = 0; // unit: us
@@ -24,12 +72,7 @@ void fetch_decode(Decode *s, vaddr_t pc);
 
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
-  #if ITRACE_COND
-    log_write("%s\n", _this->logbuf);
-  #endif
-  // Simple fix to make cpp analyzer happy
-  // if problems occur, use this original line below
-  // if (ITRACE_COND) log_write("%s\n", _this->logbuf);
+  if (ITRACE_COND) log_write("%s\n", _this->logbuf);
 #endif
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
@@ -64,6 +107,11 @@ static void statistic() {
 }
 
 void assert_fail_msg() {
+  #ifdef CONFIG_ITRACE
+  if (nemu_state.state != NEMU_STOP && nemu_state.state != NEMU_QUIT) {
+    iringbuf_print();
+  }
+  #endif
   isa_reg_display();
   statistic();
 }
@@ -93,6 +141,7 @@ void fetch_decode(Decode *s, vaddr_t pc) {
   void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
   disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
       MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.instr.val, ilen);
+  iringbuf_push(s->isa.instr.val, s->pc);
 #endif
 }
 

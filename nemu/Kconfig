@@ -146,6 +146,15 @@ config ITRACE_COND
   string "Only trace instructions when the condition is true"
   default "true"
 
+config MTRACE
+  depends on TRACE && TARGET_NATIVE_ELF && ENGINE_INTERPRETER
+  bool "Enable physical memory access tracer"
+  default n
+
+config MTRACE_COND
+  depends on MTRACE
+  string "Only trace memory when the condition is true"
+  default "true"
 
 config DIFFTEST
   depends on TARGET_NATIVE_ELF

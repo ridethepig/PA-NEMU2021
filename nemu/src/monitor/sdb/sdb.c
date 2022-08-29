@@ -127,7 +127,7 @@ static int cmd_si(char *args) {
     //   }
     //   i += 1;
     // }
-    if (success) {
+    if (!success) {
       printf("Only unsigned int value can be accepted as step number\n");
       return 0;
     }
