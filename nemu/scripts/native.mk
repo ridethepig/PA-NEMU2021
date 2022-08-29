@@ -13,8 +13,8 @@ override ARGS ?= --log=$(BUILD_DIR)/nemu-log.txt
 override ARGS += $(ARGS_DIFF)
 
 # Command to execute NEMU
-IMG ?= /home/unix/Code/ics2021/am-kernels/tests/cpu-tests/build/recursion-riscv64-nemu.bin
-ELF ?= /home/unix/Code/ics2021/am-kernels/tests/cpu-tests/build/recursion-riscv64-nemu.elf
+IMG ?= /home/unix/Code/ics2021/am-kernels/tests/cpu-tests/build/bit-riscv64-nemu.bin
+ELF ?= /home/unix/Code/ics2021/am-kernels/tests/cpu-tests/build/bit-riscv64-nemu.elf
 
 NEMU_EXEC := $(BINARY) $(ARGS) -i $(IMG)
 NEMU_EXEC_ELF := $(BINARY) $(ARGS) -e $(ELF)
