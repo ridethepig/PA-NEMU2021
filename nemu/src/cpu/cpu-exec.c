@@ -60,6 +60,21 @@ static inline void iringbuf_print() {
 
 #endif
 
+#ifdef CONFIG_FTRACE
+
+functab_node* functab_head;
+static inline functab_node* functab_find(vaddr_t addr) {
+  functab_node* ptr = functab_head;
+  while(ptr) {
+    if (ptr->addr <= addr && addr < ptr->addr_end) {
+      return ptr;
+    }
+    ptr = ptr->next;
+  }
+  return NULL;
+}
+#endif
+
 CPU_state cpu = {};
 uint64_t g_nr_guest_instr = 0;
 static uint64_t g_timer = 0; // unit: us
@@ -70,6 +85,13 @@ rtlreg_t tmp_reg[4];
 void device_update();
 void fetch_decode(Decode *s, vaddr_t pc);
 
+#include <isa-exec.h>
+
+#define FILL_EXEC_TABLE(name) [concat(EXEC_ID_, name)] = concat(exec_, name),
+static const void* g_exec_table[TOTAL_INSTR] = {
+  MAP(INSTR_LIST, FILL_EXEC_TABLE)
+};
+
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
   if (ITRACE_COND) log_write("%s\n", _this->logbuf);
@@ -79,17 +101,44 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_WATCHPOINT
   if (wp_check()) {
     nemu_state.state = NEMU_STOP;
-    printf("@ %s\n", _this->logbuf);
+    log_write("@ %s\n", _this->logbuf);
   }
 #endif
+#ifdef CONFIG_FTRACE
+  static int call_level = 0;
+  int i;
+  if (functab_head) {
+    // ret pseudo, jalr x0, 0(x1)
+    if  ( _this->EHelper == g_exec_table[EXEC_ID_jalr] &&
+          _this->dest.preg == &zero_null &&
+          _this->src1.preg == &gpr(1)
+        ) {
+      functab_node* funcitem = functab_find(_this->pc);
+      functab_node* funcitem2 = functab_find(dnpc);
+      log_write("0x%08lX:", _this->pc);
+      for (i = 0; i < call_level; ++ i) log_write(" ");
+      log_write("ret  [%s] <- [%s]\n", funcitem2 ? funcitem2->name : "???", funcitem ? funcitem->name : "???");
+      call_level --;
+    }
+    // call - jal ra, imm or jalr ra, $x
+    if  (
+      (_this->EHelper ==  g_exec_table[EXEC_ID_jalr] || _this->EHelper ==  g_exec_table[EXEC_ID_jal]) &&
+      _this->dest.preg == &gpr(1)
+    ) {
+      functab_node* funcitem = functab_find(dnpc);
+      functab_node* funcitem2 = functab_find(_this->pc);
+      log_write("0x%08lX:", _this->pc);
+      call_level ++;
+      for (i = 0; i < call_level; ++ i) log_write(" ");
+      log_write("call [%s] -> [%s]\n", funcitem2 ? funcitem2->name : "???", funcitem ? funcitem->name : "???");
+    }
+  }
+// About the problem in PA2.2, I think it's a kind of tail-recurse optimization or so,
+// 'cause sometimes there's no need to jump back and ret again
+// just return from the level which could give us an actual answer directly to our caller
+// in dasm, its a jr instead of jalr, it doesnt write ra
+#endif
 }
-
-#include <isa-exec.h>
-
-#define FILL_EXEC_TABLE(name) [concat(EXEC_ID_, name)] = concat(exec_, name),
-static const void* g_exec_table[TOTAL_INSTR] = {
-  MAP(INSTR_LIST, FILL_EXEC_TABLE)
-};
 
 static void fetch_decode_exec_updatepc(Decode *s) {
   fetch_decode(s, cpu.pc);

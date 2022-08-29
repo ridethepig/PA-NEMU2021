@@ -1,7 +1,7 @@
 #include "../local-include/reg.h"
 #include <cpu/ifetch.h>
 #include <isa-all-instr.h>
-
+word_t zero_null = 0;
 def_all_THelper();
 
 static uint32_t get_instr(Decode *s) {
@@ -18,7 +18,6 @@ static inline def_DopHelper(i) {
 
 static inline def_DopHelper(r) {
   bool is_write = flag;
-  static word_t zero_null = 0;
   op->preg = (is_write && val == 0) ? &zero_null : &gpr(val);
 }
 

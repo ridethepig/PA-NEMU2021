@@ -13,14 +13,20 @@ override ARGS ?= --log=$(BUILD_DIR)/nemu-log.txt
 override ARGS += $(ARGS_DIFF)
 
 # Command to execute NEMU
-IMG ?= /home/unix/Code/ics2021/am-kernels/tests/cpu-tests/build/div-riscv64-nemu.bin
-NEMU_EXEC := $(BINARY) $(ARGS) $(IMG)
+IMG ?= /home/unix/Code/ics2021/am-kernels/tests/cpu-tests/build/recursion-riscv64-nemu.bin
+ELF ?= /home/unix/Code/ics2021/am-kernels/tests/cpu-tests/build/recursion-riscv64-nemu.elf
+
+NEMU_EXEC := $(BINARY) $(ARGS) -i $(IMG)
+NEMU_EXEC_ELF := $(BINARY) $(ARGS) -e $(ELF)
 
 run-env: $(BINARY) $(DIFF_REF_SO)
 
 run: run-env
 	$(call git_commit, "run")
 	$(NEMU_EXEC)
+
+run-elf: run-env
+	$(NEMU_EXEC_ELF)
 
 gdb: run-env
 	$(call git_commit, "gdb")
@@ -32,4 +38,4 @@ $(clean-tools):
 clean-tools: $(clean-tools)
 clean-all: clean distclean clean-tools
 
-.PHONY: run gdb run-env clean-tools clean-all $(clean-tools)
+.PHONY: run run-elf gdb run-env clean-tools clean-all $(clean-tools)

@@ -156,6 +156,11 @@ config MTRACE_COND
   string "Only trace memory when the condition is true"
   default "true"
 
+config FTRACE
+  depends on TRACE && TARGET_NATIVE_ELF && ENGINE_INTERPRETER
+  bool "Enable function call tracer"
+  default n
+
 config DIFFTEST
   depends on TARGET_NATIVE_ELF
   bool "Enable differential testing"
