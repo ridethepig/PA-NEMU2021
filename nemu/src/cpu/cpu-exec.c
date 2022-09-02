@@ -82,7 +82,10 @@ static bool g_print_step = false;
 const rtlreg_t rzero = 0;
 rtlreg_t tmp_reg[4];
 
-void device_update();
+#ifdef CONFIG_DEVICE
+// void device_update();
+void finalize_device();
+#endif
 void fetch_decode(Decode *s, vaddr_t pc);
 
 #include <isa-exec.h>
@@ -212,7 +215,7 @@ void cpu_exec(uint64_t n) {
     g_nr_guest_instr ++;
     trace_and_difftest(&s, cpu.pc);
     if (nemu_state.state != NEMU_RUNNING) break;
-    IFDEF(CONFIG_DEVICE, device_update());
+    // IFDEF(CONFIG_DEVICE, device_update());
   }
 
   uint64_t timer_end = get_time();
@@ -228,6 +231,9 @@ void cpu_exec(uint64_t n) {
             ASNI_FMT("HIT BAD TRAP", ASNI_FG_RED))),
           nemu_state.halt_pc);
       // fall through
-    case NEMU_QUIT: statistic();
+    case NEMU_QUIT: 
+      statistic(); 
+      finalize_device(); // remember to finalize timer to avoid sdl quit problem
   }
+  
 }

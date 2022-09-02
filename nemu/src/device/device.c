@@ -4,6 +4,8 @@
 #ifndef CONFIG_TARGET_AM
 #include <SDL2/SDL.h>
 #endif
+#include <sys/time.h>
+#include <signal.h>
 
 void init_map();
 void init_serial();
@@ -18,13 +20,22 @@ void init_alarm();
 void send_key(uint8_t, bool);
 void vga_update_screen();
 
-void device_update() {
+void device_update(int signum) {
+  if (unlikely(signum != SIGALRM)) return;
   static uint64_t last = 0;
+  static uint64_t gettime_counter = 0;
+  if (gettime_counter < 10) {
+    gettime_counter += 1;
+    return;
+  } else {
+    gettime_counter = 0;
+  }
   uint64_t now = get_time();
   if (now - last < 1000000 / TIMER_HZ) {
     return;
   }
   last = now;
+  gettime_counter = 0;
 
   IFDEF(CONFIG_HAS_VGA, vga_update_screen());
 
@@ -71,4 +82,23 @@ void init_device() {
   IFDEF(CONFIG_HAS_SDCARD, init_sdcard());
 
   IFNDEF(CONFIG_TARGET_AM, init_alarm());
+  sig_t sig_ptr = signal(SIGALRM, device_update);
+  assert(sig_ptr != SIG_ERR);
+  struct itimerval timer;
+  timer.it_interval.tv_sec = 0;
+  timer.it_interval.tv_usec = 1000000 / TIMER_HZ / 10;
+  timer.it_value.tv_sec = 0;
+  timer.it_value.tv_usec = 1;
+  int settimer_ok = setitimer(ITIMER_REAL, &timer, 0);
+  assert(settimer_ok == 0);
+}
+
+void finalize_device() {
+  struct itimerval timer;
+  timer.it_interval.tv_sec = 0;
+  timer.it_interval.tv_usec = 0;
+  timer.it_value.tv_sec = 0;
+  timer.it_value.tv_usec = 0;
+  int settimer_ok = setitimer(ITIMER_REAL, &timer, 0);
+  assert(settimer_ok == 0);
 }
