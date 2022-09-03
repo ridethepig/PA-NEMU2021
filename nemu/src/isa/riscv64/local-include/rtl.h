@@ -6,4 +6,32 @@
 
 // no isa-dependent rtl instructions
 
+static inline def_rtl(csr2gpr, rtlreg_t *dest, int idx) {
+    switch (idx)
+    {
+    case CSR_mcause:
+    case CSR_mepc:
+    case CSR_mstatus:
+    case CSR_mtvec:
+        break;
+    default:
+        panic("unsupported csr reg");
+    }
+    *dest = csr(idx);
+}
+
+static inline def_rtl(gpr2csr, rtlreg_t *src, int idx) {
+    switch (idx)
+    {
+    case CSR_mcause:
+    case CSR_mepc:
+    case CSR_mstatus:
+    case CSR_mtvec:
+        break;
+    default:
+        panic("unsupported csr reg");
+    }
+    csr(idx) = *src;
+}
+
 #endif

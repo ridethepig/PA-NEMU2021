@@ -232,8 +232,10 @@ void cpu_exec(uint64_t n) {
           nemu_state.halt_pc);
       // fall through
     case NEMU_QUIT: 
-      statistic(); 
+      statistic();
+    #ifdef CONFIG_DEVICE
       finalize_device(); // remember to finalize timer to avoid sdl quit problem
+    #endif
   }
   
 }

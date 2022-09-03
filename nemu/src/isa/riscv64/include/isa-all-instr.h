@@ -12,6 +12,8 @@
                     f(beq) f(bne) f(blt) f(bge) f(bltu) f(bgeu) \
                     f(mul) f(mulh) f(mulhsu) f(mulhu) f(divs) f(divu) f(rem) f(remu) \
                     f(mulw) f(divw) f(divuw) f(remw) f(remuw) \
+                    f(csrrw) f(csrrs) f(csrrc) f(csrrwi) f(csrrsi) f(csrrci) \
+                    f(ecall) \
                     f(inv) \
                     f(nemu_trap)
 

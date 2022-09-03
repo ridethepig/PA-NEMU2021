@@ -6,3 +6,4 @@
 !.gitignore
 !README.md
 !resources/logo.txt
+!*.json
