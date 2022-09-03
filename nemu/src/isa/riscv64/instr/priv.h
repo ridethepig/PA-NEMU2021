@@ -48,3 +48,8 @@ def_EHelper(csrrci) {
 def_EHelper(ecall) {
     rtl_j(s, isa_raise_intr(EX_ecall_m, s->pc));
 }
+
+def_EHelper(mret) {
+    rtl_j(s, cpu.sr[CSR_mepc]);
+    // TODO set mstatus
+}

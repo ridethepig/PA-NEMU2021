@@ -14,6 +14,7 @@
                     f(mulw) f(divw) f(divuw) f(remw) f(remuw) \
                     f(csrrw) f(csrrs) f(csrrc) f(csrrwi) f(csrrsi) f(csrrci) \
                     f(ecall) \
+                    f(mret) \
                     f(inv) \
                     f(nemu_trap)
 

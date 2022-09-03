@@ -7,8 +7,9 @@ typedef struct {
   union {
     uint64_t _64;
   } gpr[32];
-  uint64_t sr[4096]; // no matter it is implemented or not
   vaddr_t pc;
+  uint64_t sr[4096]; // no matter it is implemented or not
+  // put new members at the end, or difftest will break down
 } riscv64_CPU_state;
 
 // decode
