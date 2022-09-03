@@ -10,5 +10,5 @@
 !Kconfig
 include/config
 include/generated
-.vscode
+!/.vscode/*
 .idea

@@ -11,9 +11,10 @@
 !Makefile
 !README
 !LICENSE
+!*.json
 .*
 _*
 *~
 build/
 !.gitignore
-.vscode
+!.vscode/

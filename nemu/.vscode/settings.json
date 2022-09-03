@@ -1,0 +1,42 @@
+{
+    "files.associations": {
+        "isa-all-instr.h": "c",
+        "locale.h": "c",
+        "difftest.h": "c",
+        "cpu.h": "c",
+        "reg.h": "c",
+        "host.h": "c",
+        "paddr.h": "c",
+        "mmio.h": "c",
+        "isa.h": "c",
+        "vaddr.h": "c",
+        "sdb.h": "c",
+        "common.h": "c",
+        "stdint.h": "c",
+        "stdbool.h": "c",
+        "ifetch.h": "c",
+        "atomic": "c",
+        "array": "c",
+        "string_view": "c",
+        "type_traits": "c",
+        "exec.h": "c",
+        "random": "c",
+        "decode.h": "c",
+        "elf.h": "c",
+        "typeinfo": "c",
+        "isa-def.h": "c",
+        "difftest-def.h": "c",
+        "alarm.h": "c",
+        "sdl.h": "c",
+        "utils.h": "c"
+    },
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "src/isa/riscv32/": true
+    }
+}

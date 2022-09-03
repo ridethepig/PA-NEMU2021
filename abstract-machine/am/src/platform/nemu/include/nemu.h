@@ -12,7 +12,7 @@
 # define nemu_trap(code) asm volatile ("move $v0, %0; .word 0xf0000000" : :"r"(code))
 #elif defined(__ISA_RISCV32__) || defined(__ISA_RISCV64__)
 # define nemu_trap(code) asm volatile("mv a0, %0; .word 0x0000006b" : :"r"(code))
-#elif
+#else
 # error unsupported ISA __ISA__
 #endif
 

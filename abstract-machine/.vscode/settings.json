@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "am.h": "c",
+        "klib.h": "c",
+        "klib-macros.h": "c",
+        "nemu.h": "c"
+    }
+}
