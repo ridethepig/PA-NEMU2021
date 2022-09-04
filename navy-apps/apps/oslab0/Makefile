@@ -1,6 +1,6 @@
 REPO_PATH = repo
 ifeq ($(wildcard repo/161220016/main.c),)
-  $(shell git clone --depth=1 git@github.com:NJU-ProjectN/oslab0-collection.git $(REPO_PATH))
+  $(shell git clone --depth=1 https://github.com/NJU-ProjectN/oslab0-collection.git $(REPO_PATH))
 endif
 
 GAMES = $(shell ls ./repo | grep -E "[0-9]{9}")

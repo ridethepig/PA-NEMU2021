@@ -12,4 +12,6 @@
 #include <klib-macros.h>
 #include <debug.h>
 
+#define FMT_WORD "0x%016lx"
+// #define CONFIG_STRACE
 #endif

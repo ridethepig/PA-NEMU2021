@@ -1,7 +1,7 @@
 REPO_PATH = repo
 ifeq ($(wildcard repo/include/palcommon.h),)
   $(shell mkdir -p $(NAVY_HOME)/fsimg/share/games)
-  $(shell git clone --depth=1 git@github.com:NJU-ProjectN/pal-navy.git $(REPO_PATH))
+  $(shell git clone --depth=1 https://github.com/NJU-ProjectN/pal-navy.git $(REPO_PATH))
 endif
 
 NAME = pal
