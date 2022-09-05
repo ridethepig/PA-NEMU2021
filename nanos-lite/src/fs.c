@@ -34,3 +34,67 @@ static Finfo file_table[] __attribute__((used)) = {
 void init_fs() {
   // TODO: initialize the size of /dev/fb
 }
+
+size_t ramdisk_read(void *buf, size_t offset, size_t len);
+size_t ramdisk_write(const void *buf, size_t offset, size_t len);
+
+static size_t fs_offset;
+
+int fs_open(const char* pathname, int flags, int mode) {
+  int i;
+  for (i = 0; i < sizeof(file_table) / sizeof(Finfo); ++ i) {
+    if (strcmp(pathname, file_table[i].name) == 0) {
+      fs_offset = file_table[i].disk_offset;
+      return i; // simply assign file_table index to fd
+    }
+  }
+  panic("file not found");
+  return -1;
+}
+
+size_t fs_read(int fd, void *buf, size_t len) {
+  if (fs_offset - file_table[fd].disk_offset + len > file_table[fd].size) {
+    len = file_table[fd].size + file_table[fd].disk_offset - fs_offset;
+  }
+  
+  ramdisk_read(buf, fs_offset, len);
+  fs_offset += len;
+  return len;
+}
+
+size_t fs_write(int fd, void *buf, size_t len) {
+  if (fs_offset - file_table[fd].disk_offset + len > file_table[fd].size) {
+    len = file_table[fd].size + file_table[fd].disk_offset - fs_offset;
+  }
+  ramdisk_write(buf, fs_offset, len);
+  fs_offset += len;
+  return len;
+}
+
+size_t fs_lseek(int fd, size_t offset, int whence) {
+  size_t new_offset;
+  switch (whence)
+  {
+  case SEEK_SET:
+    new_offset = file_table[fd].disk_offset + offset;
+  break;
+  case SEEK_CUR:
+    new_offset = fs_offset + offset;
+  break;
+  case SEEK_END:
+    new_offset = file_table[fd].disk_offset + file_table[fd].size + offset;
+    break;
+  default:
+    return -1;
+  }
+  if (new_offset >= file_table[fd].disk_offset && new_offset <= file_table[fd].disk_offset + file_table[fd].size){
+    fs_offset = new_offset;
+    return new_offset - file_table[fd].disk_offset;
+  } else {
+    return -1;
+  }
+}
+
+int fs_close(int fd) {
+  return 0;
+}
