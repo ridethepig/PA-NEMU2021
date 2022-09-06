@@ -231,8 +231,8 @@ int sprintf(char* out, const char* fmt, ...) {
 }
 
 static void putch_strn(int ch, sprintbuf* buf) {
-  buf->cnt++;
   if (buf->buf_s < buf->buf_e) {
+    (buf->cnt)++;
     *buf->buf_s++ = ch;
   }
 }
