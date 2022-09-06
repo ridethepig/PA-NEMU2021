@@ -1,5 +1,6 @@
 #include <common.h>
 #include <fs.h>
+#include <sys/time.h>
 #include "syscall.h"
 // do not use syscall.h for any actual purpose
 // files.h and syscall.h are both symlink to navy-apps
@@ -10,35 +11,17 @@ static char* syscall_names[] = {
   "SYS_unlink", "SYS_wait",   "SYS_times",  "SYS_gettimeofday"
 };
 #endif
-static inline intptr_t syscall_write(int fd, void* buf, size_t count) {
-  if (fd == 1 || fd == 2) {
-    for (; count; -- count) {
-      putch(*(char*)buf);
-      buf ++;
-    }
-    return 0;
-  } else {
-    return fs_write(fd, buf, count);
-  }
+
+static inline intptr_t syscall_brk(intptr_t addr) {
+  return 0;
 }
 
-static inline intptr_t syscall_read(int fd, void* buf, size_t len) {
-  if (fd <= 2) {
-    return 0;
-  } else {
-    return fs_read(fd, buf, len);
-  }
-}
-
-static inline intptr_t syscall_lseek(int fd, size_t offset, int whence) {
-  if (fd <= 2) {
-    return 0;
-  } else {
-    return fs_lseek(fd, offset, whence);
-  }
-}
-
-static intptr_t syscall_brk(intptr_t addr) {
+static inline intptr_t syscall_gettimeofday(struct timeval * tv, struct timezone * tz) {
+  uint64_t uptime = io_read(AM_TIMER_UPTIME).us;
+  tv->tv_sec = uptime / 1000000;
+  tv->tv_usec = uptime % 1000000; // according to man, usec ranges [0, 999999]
+  tz->tz_minuteswest = 0;
+  tz->tz_dsttime = 0;
   return 0;
 }
 
@@ -69,13 +52,16 @@ void do_syscall(Context *c) {
       c->GPRx = fs_close(a[1]);
     break;
     case SYS_read:
-      c->GPRx = syscall_read(a[1], (void*)a[2], a[3]);
+      c->GPRx = fs_read(a[1], (void*)a[2], a[3]);
     break;
     case SYS_write:
-      c->GPRx = syscall_write(a[1], (void*)a[2], a[3]);
+      c->GPRx = fs_write(a[1], (void*)a[2], a[3]);
     break;
     case SYS_lseek:
-      c->GPRx = syscall_lseek(a[1], a[2], a[3]);
+      c->GPRx = fs_lseek(a[1], a[2], a[3]);
+    break;
+    case SYS_gettimeofday:
+      c->GPRx = syscall_gettimeofday((struct timeval*)a[1], (struct timezone*)a[2]);
     break;
     default: panic("Unhandled syscall ID = %d", a[0]);
   }

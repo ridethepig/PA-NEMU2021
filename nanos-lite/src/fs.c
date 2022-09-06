@@ -1,4 +1,5 @@
 #include <fs.h>
+#include <device.h>
 
 typedef size_t (*ReadFn) (void *buf, size_t offset, size_t len);
 typedef size_t (*WriteFn) (const void *buf, size_t offset, size_t len);
@@ -26,8 +27,8 @@ size_t invalid_write(const void *buf, size_t offset, size_t len) {
 /* This is the information about all files in disk. */
 static Finfo file_table[] __attribute__((used)) = {
   [FD_STDIN]  = {"stdin", 0, 0, invalid_read, invalid_write},
-  [FD_STDOUT] = {"stdout", 0, 0, invalid_read, invalid_write},
-  [FD_STDERR] = {"stderr", 0, 0, invalid_read, invalid_write},
+  [FD_STDOUT] = {"stdout", 0, 0, invalid_read, serial_write},
+  [FD_STDERR] = {"stderr", 0, 0, invalid_read, serial_write},
 #include "files.h"
 };
 
@@ -53,16 +54,26 @@ int fs_open(const char* pathname, int flags, int mode) {
 }
 
 size_t fs_read(int fd, void *buf, size_t len) {
+  if (file_table[fd].read) {
+    len = file_table[fd].read(buf, fs_offset, len);
+    fs_offset += len;
+    return len;
+  }
+  // fallback to ramdisk read
   if (fs_offset - file_table[fd].disk_offset + len > file_table[fd].size) {
     len = file_table[fd].size + file_table[fd].disk_offset - fs_offset;
   }
-  
   ramdisk_read(buf, fs_offset, len);
   fs_offset += len;
   return len;
 }
 
 size_t fs_write(int fd, void *buf, size_t len) {
+  if (file_table[fd].write) {
+    len = file_table[fd].write(buf, fs_offset,len);
+    fs_offset += len;
+    return len;
+  }
   if (fs_offset - file_table[fd].disk_offset + len > file_table[fd].size) {
     len = file_table[fd].size + file_table[fd].disk_offset - fs_offset;
   }
