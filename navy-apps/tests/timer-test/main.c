@@ -1,6 +1,6 @@
 #include <sys/time.h>
 #include <stdio.h>
-#include <NDL.h>
+// #include <NDL.h>
 int main() {
     int count = 0;
     struct timeval old_tv, cur_tv;
@@ -17,17 +17,17 @@ int main() {
         count ++;
       }
     }
-    NDL_Init(0);
-    unsigned int old_ms = NDL_GetTicks();
-    unsigned int cur_ms = 0;
-    count = 0;
-    while (count < 40) {
-        cur_ms = NDL_GetTicks();
-        if (cur_ms - old_ms > 500) {
-            old_ms = cur_ms;
-            printf("ndl tick %d\n", count);
-            count ++;
-        }
-    }
+    // NDL_Init(0);
+    // unsigned int old_ms = NDL_GetTicks();
+    // unsigned int cur_ms = 0;
+    // count = 0;
+    // while (count < 40) {
+    //     cur_ms = NDL_GetTicks();
+    //     if (cur_ms - old_ms > 500) {
+    //         old_ms = cur_ms;
+    //         printf("ndl tick %d\n", count);
+    //         count ++;
+    //     }
+    // }
     return 0;
 }

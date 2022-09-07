@@ -47,8 +47,12 @@ void NDL_OpenCanvas(int *w, int *h) {
       if (strcmp(buf, "mmap ok") == 0) break;
     }
     close(fbctl);
-  } 
-  if (*h <= screen_h && *w <= screen_w) {
+  }
+  if (*h == 0 && *w == 0) {
+    canvas_h = screen_h;
+    canvas_w = screen_w;
+  }
+  else if (*h <= screen_h && *w <= screen_w) {
     canvas_h = *h;
     canvas_w = *w;
   }
