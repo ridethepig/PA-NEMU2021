@@ -6,7 +6,7 @@ env:
 	$(MAKE) -C $(NAVY_HOME)/libs/libos ISA=native
 
 run: app env
-	@LD_PRELOAD=$(NAVY_HOME)/libs/libos/build/native.so $(APP) $(mainargs)
+	LD_PRELOAD=$(NAVY_HOME)/libs/libos/build/native.so $(APP) $(mainargs)
 
 gdb: app env
 	@LD_PRELOAD=$(NAVY_HOME)/libs/libos/build/native.so gdb --args $(APP) $(mainargs)

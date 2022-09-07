@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <sys/time.h>
+#include <errno.h>
 
 static int evtdev = -1;
 static int fbdev = -1;
@@ -26,7 +27,7 @@ int NDL_PollEvent(char *buf, int len) {
   int fd = open("/dev/events", O_RDONLY);
   assert(fd);
   int _len = read(fd, buf, len);
-  close(fd);
+  // close(fd);
   return _len;
 }
 
@@ -51,6 +52,8 @@ void NDL_OpenCanvas(int *w, int *h) {
   if (*h == 0 && *w == 0) {
     canvas_h = screen_h;
     canvas_w = screen_w;
+    *w = screen_w;
+    *h = screen_h;
   }
   else if (*h <= screen_h && *w <= screen_w) {
     canvas_h = *h;
@@ -64,17 +67,21 @@ void NDL_DrawRect(uint32_t *pixels, int x, int y, int w, int h) {
   x += (screen_w - canvas_w) / 2;
   y += (screen_h - canvas_h) / 2;
   int fd = open("/dev/fb", O_WRONLY);
-  assert(fd);
+  assert(fd != -1);
+  // printf("drawing to %d, %08X: %d %d %d %d\n", fd, *pixels, x,y,w,h);
   size_t base_offset = (y * screen_w + x) * sizeof(uint32_t);
   size_t pixel_offset = 0;
-  int j;
+  int j, ret_seek, ret_write;
   for (j = 0; j < h; ++ j) {
-    lseek(fd, base_offset, SEEK_SET);
-    write(fd, pixels + pixel_offset, w * sizeof(uint32_t));
+    ret_seek = lseek(fd, base_offset, SEEK_SET);
+    // printf("(%d, %s) ", ret_seek, strerror(errno));
+    ret_write = write(fd, pixels + pixel_offset, w * sizeof(uint32_t));
     pixel_offset += w;
     base_offset += screen_w * sizeof(uint32_t);
   }
-  close(fd);
+  // assert(close(fd) == 0);
+  // god damn knows why i close this would casue fucking problems
+  // do not close these special files, especially in native mode!!!
 }
 
 void NDL_OpenAudio(int freq, int channels, int samples) {
@@ -122,7 +129,7 @@ int NDL_Init(uint32_t flags) {
   } else if (strcmp(buf_kv, "HEIGHT") == 0){
     screen_h = atoi(tok1_v);
   } else assert(0);
-  close(fd);
+  // close(fd);
 
   return 0;
 }

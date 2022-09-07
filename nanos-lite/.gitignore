@@ -6,4 +6,5 @@
 !.gitignore
 !README.md
 !resources/logo.txt
-!.vscode/c_cpp_properties.json
+!.vscode
+!/.vscode/c_cpp_properties.json

@@ -11,10 +11,10 @@
 !Makefile
 !README
 !LICENSE
-!*.json
 .*
 _*
 *~
 build/
 !.gitignore
-!.vscode/
+!/.vscode
+!/.vscode/c_cpp_properties.json
