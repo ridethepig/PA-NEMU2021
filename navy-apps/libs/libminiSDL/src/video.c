@@ -2,6 +2,7 @@
 #include <sdl-video.h>
 #include <assert.h>
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 /**
@@ -78,7 +79,18 @@ void SDL_UpdateRect(SDL_Surface *s, int x, int y, int w, int h) {
     w = s->w;
     h = s->h;
   }
-  NDL_DrawRect(s->pixels, x, y, w, h);
+  uint32_t* pixels = (uint32_t*)s->pixels;
+  if (s->format->BitsPerPixel == 8) {
+    pixels = (uint32_t*)malloc(sizeof(uint32_t) * s->w * s->h);
+    SDL_Color *colors = s->format->palette->colors;
+    for (int i = 0; i < s->w * s->h; ++ i) {
+      pixels[i] = (colors[s->pixels[i]].a << 24) | (colors[s->pixels[i]].r << 16) | (colors[s->pixels[i]].g << 8) | colors[s->pixels[i]].b;
+      // if direct assign, the color would be 0x00BBGGRR
+    }
+  }
+  NDL_DrawRect(pixels, x, y, w, h);
+  if (s->format->BitsPerPixel == 8)
+    free(pixels);
 }
 
 // APIs below are already implemented.
@@ -185,6 +197,9 @@ void SDL_SoftStretch(SDL_Surface *src, SDL_Rect *srcrect, SDL_Surface *dst, SDL_
     SDL_BlitSurface(src, &rect, dst, dstrect);
   }
   else {
+    printf("%d %d %d %d\n",w , dstrect->w ,h , dstrect->h);
+    // it seems that, must set pal window size to 320 * 200
+    // or this unimplemented strech will fail
     assert(0);
   }
 }
