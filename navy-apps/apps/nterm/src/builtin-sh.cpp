@@ -23,12 +23,28 @@ static void sh_prompt() {
 }
 
 static void sh_handle_cmd(const char *cmd) {
+  char* const argv[] = {NULL};
+  // char* const envp[] = {NULL};
+  printf("Exec:%s\n", cmd);
+  char* cmd_buf = (char*)malloc(strlen(cmd) + 1);
+  strcpy(cmd_buf, cmd);
+  char * tok0 = strtok(cmd_buf, " \n");
+  printf("%s\n", tok0);
+  if (strcmp(tok0, "exit") == 0) {
+    SDL_Quit();
+  } else if (strcmp(tok0, "echo") == 0) {
+    sh_printf("%s", cmd_buf + strlen(tok0) + 1);
+  } else {
+    if (execvp(tok0, argv) == -1){
+      sh_printf("Error execute %s\n", tok0);
+    }
+  }
 }
 
 void builtin_sh_run() {
   sh_banner();
   sh_prompt();
-
+  setenv("PATH", "/bin", 0);
   while (1) {
     SDL_Event ev;
     if (SDL_PollEvent(&ev)) {

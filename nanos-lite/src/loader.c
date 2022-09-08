@@ -18,6 +18,7 @@ static uintptr_t loader(PCB *pcb, const char *filename) {
   uint32_t i, phoff;
   int fd;
   fd = fs_open(filename, 0, 0);
+  assert(fd != -1);
   // ramdisk_read(ptr_ehdr, 0, sizeof(Elf_Ehdr));
   fs_read(fd, ptr_ehdr, sizeof(Elf_Ehdr));
   assert(*((uint32_t*)ptr_ehdr) == 0x464c457f);

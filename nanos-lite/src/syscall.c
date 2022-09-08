@@ -2,6 +2,7 @@
 #include <fs.h>
 #include <sys/time.h>
 #include "syscall.h"
+#include <proc.h>
 // do not use syscall.h for any actual purpose
 // files.h and syscall.h are both symlink to navy-apps
 #ifdef CONFIG_STRACE
@@ -11,6 +12,13 @@ static char* syscall_names[] = {
   "SYS_unlink", "SYS_wait",   "SYS_times",  "SYS_gettimeofday"
 };
 #endif
+void naive_uload(PCB *pcb, const char *filename);
+static inline intptr_t syscall_execve(const char *fname, char * const argv[], char *const envp[]) {
+  int fd = fs_open(fname, 0, 0);
+  if (fd == -1) return fd;
+  naive_uload(NULL, fname);
+  return 0;
+}
 
 static inline intptr_t syscall_brk(intptr_t addr) {
   return 0;
@@ -20,8 +28,10 @@ static inline intptr_t syscall_gettimeofday(struct timeval * tv, struct timezone
   uint64_t uptime = io_read(AM_TIMER_UPTIME).us;
   tv->tv_sec = uptime / 1000000;
   tv->tv_usec = uptime % 1000000; // according to man, usec ranges [0, 999999]
-  tz->tz_minuteswest = 0;
-  tz->tz_dsttime = 0;
+  if (tz) {
+    tz->tz_dsttime = 0;
+    tz->tz_minuteswest = 0;
+  }
   return 0;
 }
 
@@ -40,7 +50,9 @@ void do_syscall(Context *c) {
       c->GPRx = 0;
     break;
     case SYS_exit:
-      halt(a[1]); c->GPRx = a[1];
+      // halt(a[1]); 
+      naive_uload(NULL, "/bin/menu");
+      c->GPRx = a[1];
     break;
     case SYS_brk:
       c->GPRx = syscall_brk(a[1]);
@@ -62,6 +74,9 @@ void do_syscall(Context *c) {
     break;
     case SYS_gettimeofday:
       c->GPRx = syscall_gettimeofday((struct timeval*)a[1], (struct timezone*)a[2]);
+    break;
+    case SYS_execve:
+      c->GPRx = syscall_execve((char *)a[1], (char * const*)a[2], (char * const*)a[3]);
     break;
     default: panic("Unhandled syscall ID = %d", a[0]);
   }

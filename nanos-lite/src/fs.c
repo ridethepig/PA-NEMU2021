@@ -55,7 +55,6 @@ int fs_open(const char* pathname, int flags, int mode) {
       return i; // simply assign file_table index to fd
     }
   }
-  panic("file not found");
   return -1;
 }
 
