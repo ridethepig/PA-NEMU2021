@@ -34,9 +34,11 @@ static void sh_handle_cmd(const char *cmd) {
   // printf("CMD:%s\n", tok0);
   if (strcmp(tok0, "exit") == 0) {
     SDL_Quit();
-  } else if (strcmp(tok0, "echo") == 0) {
-    sh_printf("%s", cmd_buf + strlen(tok0) + 1);
-  } else {
+  } 
+  // else if (strcmp(tok0, "echo") == 0) {
+  //   sh_printf("%s", cmd_buf + strlen(tok0) + 1);
+  // } 
+  else {
     argv[argc++] = tok0;
     while (tok0 = strtok(NULL, " \n")) {
       argv[argc ++] = tok0;
@@ -53,7 +55,7 @@ static void sh_handle_cmd(const char *cmd) {
 void builtin_sh_run() {
   sh_banner();
   sh_prompt();
-  setenv("PATH", "/bin", 0);
+  setenv("PATH", "/bin:/usr/bin", 0);
   while (1) {
     SDL_Event ev;
     if (SDL_PollEvent(&ev)) {

@@ -10,6 +10,7 @@ typedef struct {
   size_t disk_offset;
   ReadFn read;
   WriteFn write;
+  size_t fs_offset;
 } Finfo;
 
 enum {FD_STDIN, FD_STDOUT, FD_STDERR, FD_FB, FD_EVENTS, FD_DISPINFO};
@@ -45,13 +46,12 @@ void init_fs() {
 size_t ramdisk_read(void *buf, size_t offset, size_t len);
 size_t ramdisk_write(const void *buf, size_t offset, size_t len);
 
-static size_t fs_offset;
 
 int fs_open(const char* pathname, int flags, int mode) {
   int i;
   for (i = 0; i < sizeof(file_table) / sizeof(Finfo); ++ i) {
     if (file_table[i].name && strcmp(pathname, file_table[i].name) == 0) {
-      fs_offset = file_table[i].disk_offset;
+      file_table[i].fs_offset = file_table[i].disk_offset;
       return i; // simply assign file_table index to fd
     }
   }
@@ -60,30 +60,31 @@ int fs_open(const char* pathname, int flags, int mode) {
 
 size_t fs_read(int fd, void *buf, size_t len) {
   if (file_table[fd].read) {
-    len = file_table[fd].read(buf, fs_offset, len);
-    fs_offset += len;
+    len = file_table[fd].read(buf, file_table[fd].fs_offset, len);
+    file_table[fd].fs_offset += len;
     return len;
   }
   // fallback to ramdisk read
-  if (fs_offset - file_table[fd].disk_offset + len > file_table[fd].size) {
-    len = file_table[fd].size + file_table[fd].disk_offset - fs_offset;
+  if (file_table[fd].fs_offset - file_table[fd].disk_offset + len > file_table[fd].size) {
+    len = file_table[fd].size + file_table[fd].disk_offset - file_table[fd].fs_offset;
   }
-  ramdisk_read(buf, fs_offset, len);
-  fs_offset += len;
+  Log("file_table[fd].fs_offset: %d, disk_off: %d, size: %d, len: %d", file_table[fd].fs_offset, file_table[fd].disk_offset,file_table[fd].size, len);
+  ramdisk_read(buf, file_table[fd].fs_offset, len);
+  file_table[fd].fs_offset += len;
   return len;
 }
 
 size_t fs_write(int fd, void *buf, size_t len) {
   if (file_table[fd].write) {
-    len = file_table[fd].write(buf, fs_offset,len);
-    fs_offset += len;
+    len = file_table[fd].write(buf, file_table[fd].fs_offset,len);
+    file_table[fd].fs_offset += len;
     return len;
   }
-  if (fs_offset - file_table[fd].disk_offset + len > file_table[fd].size) {
-    len = file_table[fd].size + file_table[fd].disk_offset - fs_offset;
+  if (file_table[fd].fs_offset - file_table[fd].disk_offset + len > file_table[fd].size) {
+    len = file_table[fd].size + file_table[fd].disk_offset - file_table[fd].fs_offset;
   }
-  ramdisk_write(buf, fs_offset, len);
-  fs_offset += len;
+  ramdisk_write(buf, file_table[fd].fs_offset, len);
+  file_table[fd].fs_offset += len;
   return len;
 }
 
@@ -95,7 +96,7 @@ size_t fs_lseek(int fd, size_t offset, int whence) {
     new_offset = file_table[fd].disk_offset + offset;
   break;
   case SEEK_CUR:
-    new_offset = fs_offset + offset;
+    new_offset = file_table[fd].fs_offset + offset;
   break;
   case SEEK_END:
     new_offset = file_table[fd].disk_offset + file_table[fd].size + offset;
@@ -104,7 +105,7 @@ size_t fs_lseek(int fd, size_t offset, int whence) {
     return -1;
   }
   if (new_offset >= file_table[fd].disk_offset && new_offset <= file_table[fd].disk_offset + file_table[fd].size){
-    fs_offset = new_offset;
+    file_table[fd].fs_offset = new_offset;
     return new_offset - file_table[fd].disk_offset;
   } else {
     return -1;

@@ -17,7 +17,7 @@ void switch_boot_pcb() {
 void hello_fun(void *arg) {
   int j = 1;
   while (1) {
-    if (j % 1000 == 0)
+    if (j % 10000 == 0)
       Log("Hello World from Nanos-lite with arg '%s' for the %dth time!", (uintptr_t)arg, j);
     j ++;
     yield();
@@ -38,8 +38,7 @@ void context_uload(PCB* ptr_pcb, const char* filename, char* const argv[], char*
   uintptr_t ustack = (uintptr_t)(new_page(8) + 8 * PGSIZE);
   kstack.start = ptr_pcb; // this is for PCB on stack, processed by kernel
   kstack.end = &ptr_pcb->stack[sizeof(ptr_pcb->stack)];
-  uintptr_t entry = loader(ptr_pcb, filename);
-  ptr_pcb->cp = ucontext(NULL, kstack, (void*)entry);
+
 // Set argv, envp
   int argv_count = 0;
   int envp_count = 0;
@@ -52,12 +51,15 @@ void context_uload(PCB* ptr_pcb, const char* filename, char* const argv[], char*
   if (envp) {
     while (envp[envp_count]) envp_count ++;
   }
+  // Log("argv_count:%d, envp_count:%d", argv_count, envp_count);
+  // Log("envp: %p", envp[0]);
   // copy strings
   for (int i = 0; i < envp_count; ++ i) {
     ustack -= strlen(envp[i]) + 1;
     strcpy((char*)ustack, envp[i]);
     _envp[i] = (char*)ustack;
   }
+
   for (int i = 0; i < argv_count; ++ i) {
     ustack -= strlen(argv[i]) + 1;
     strcpy((char*)ustack, argv[i]);
@@ -74,14 +76,16 @@ void context_uload(PCB* ptr_pcb, const char* filename, char* const argv[], char*
   ustack -= sizeof(uintptr_t);
   *(uintptr_t *)ustack = argv_count;
   // set stack pos
+  uintptr_t entry = loader(ptr_pcb, filename);
+  ptr_pcb->cp = ucontext(NULL, kstack, (void*)entry);
   ptr_pcb->cp->GPRx = ustack;
 }
 
 void init_proc() {
   context_kload(&pcb[0], hello_fun, "fuckyou");
   char* test_argv[] = {"/bin/exec-test", NULL};
-  // char* test_envp[] = {"LOVER=fucker", NULL};
-  context_uload(&pcb[1], "/bin/nterm", test_argv, NULL);
+  char* test_envp[] = {"LOVER=fucker", NULL};
+  context_uload(&pcb[1], "/bin/nterm", test_argv, test_envp);
   switch_boot_pcb();
   // Log("Initializing processes...");
 

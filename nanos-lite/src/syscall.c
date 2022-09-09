@@ -17,7 +17,7 @@ void switch_boot_pcb();
 
 static inline intptr_t syscall_execve(const char *filename, char * const argv[], char *const envp[]) {
   int fd = fs_open(filename, 0, 0);
-  if (fd == -1) assert(0);
+  if (fd == -1) return -2;
   context_uload(current, filename, argv, envp);
   switch_boot_pcb();
   yield();
