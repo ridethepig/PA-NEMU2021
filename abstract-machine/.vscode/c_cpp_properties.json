@@ -5,11 +5,16 @@
             "includePath": [
                 "${workspaceFolder}/**"
             ],
-            "defines": ["ARCH_H=\"arch/riscv64-nemu.h\"", "ISA_H=\"../../../riscv/riscv.h\"", "__ISA_RISCV64__"],
+            "defines": [
+                "ARCH_H=\"arch/riscv64-nemu.h\"",
+                "ISA_H=\"../../../riscv/riscv.h\"",
+                "__ISA_RISCV64__"
+            ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
-            "intelliSenseMode": "linux-gcc-x64"
+            "intelliSenseMode": "linux-gcc-x64",
+            "configurationProvider": "ms-vscode.makefile-tools"
         }
     ],
     "version": 4

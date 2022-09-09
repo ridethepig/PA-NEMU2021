@@ -13,7 +13,7 @@
 #define MAX_INSTR_TO_PRINT 10
 
 #ifdef CONFIG_ITRACE
-#define RINGBUF_SIZE 20
+#define RINGBUF_SIZE 40
 #define DASM_PRINTBUF_SIZE 128
 typedef struct
 {

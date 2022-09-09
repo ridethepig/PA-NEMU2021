@@ -12,11 +12,15 @@ static char* syscall_names[] = {
   "SYS_unlink", "SYS_wait",   "SYS_times",  "SYS_gettimeofday"
 };
 #endif
-void naive_uload(PCB *pcb, const char *filename);
-static inline intptr_t syscall_execve(const char *fname, char * const argv[], char *const envp[]) {
-  int fd = fs_open(fname, 0, 0);
-  if (fd == -1) return fd;
-  naive_uload(NULL, fname);
+void context_uload(PCB* ptr_pcb, const char* filename, char* const argv[], char* const envp[]);
+void switch_boot_pcb();
+
+static inline intptr_t syscall_execve(const char *filename, char * const argv[], char *const envp[]) {
+  int fd = fs_open(filename, 0, 0);
+  if (fd == -1) assert(0);
+  context_uload(current, filename, argv, envp);
+  switch_boot_pcb();
+  yield();
   return 0;
 }
 
@@ -50,8 +54,8 @@ void do_syscall(Context *c) {
       c->GPRx = 0;
     break;
     case SYS_exit:
-      // halt(a[1]); 
-      naive_uload(NULL, "/bin/menu");
+      halt(a[1]); 
+      // naive_uload(NULL, "/bin/menu");
       c->GPRx = a[1];
     break;
     case SYS_brk:

@@ -12,7 +12,7 @@ size_t ramdisk_write(const void *buf, size_t offset, size_t len);
 # define Elf_Phdr Elf32_Phdr
 #endif
 
-static uintptr_t loader(PCB *pcb, const char *filename) {
+uintptr_t loader(PCB *pcb, const char *filename) {
   Elf_Ehdr ehdr, *ptr_ehdr = &ehdr;
   Elf_Phdr phdr, *ptr_phdr = &phdr;
   uint32_t i, phoff;

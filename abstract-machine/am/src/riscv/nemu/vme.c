@@ -70,5 +70,13 @@ void map(AddrSpace *as, void *va, void *pa, int prot) {
 }
 
 Context *ucontext(AddrSpace *as, Area kstack, void *entry) {
-  return NULL;
+  Context* context = kstack.end - sizeof(Context);
+  memset(context, 0, sizeof(Context));
+  // context->gpr[1] = (uintptr_t)entry;
+  context->mepc = (uintptr_t)entry;
+  context->mepc -= 4;
+  context->mstatus = 0xa00001800;
+  context->mcause = 0;
+  // user stack is set by os
+  return context;
 }
