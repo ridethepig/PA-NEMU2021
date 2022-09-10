@@ -28,7 +28,13 @@
         "difftest-def.h": "c",
         "alarm.h": "c",
         "sdl.h": "c",
-        "utils.h": "c"
+        "utils.h": "c",
+        "*.tcc": "c",
+        "bitset": "c",
+        "numeric": "c",
+        "streambuf": "c",
+        "regex": "c",
+        "tuple": "c"
     },
     "files.exclude": {
         "**/.git": true,

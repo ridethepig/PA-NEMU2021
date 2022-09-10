@@ -1,4 +1,4 @@
-#include <memory.h>
+#include <nanos_memory.h>
 
 static void *pf = NULL;
 
@@ -14,7 +14,8 @@ void* new_page(size_t nr_page) {
 
 #ifdef HAS_VME
 static void* pg_alloc(int n) {
-  return NULL;
+  assert(n % PGSIZE == 0); // PA assert this n
+  return new_page(n / PGSIZE); // set zero: done in new_page
 }
 #endif
 

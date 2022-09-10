@@ -13,6 +13,7 @@ static inline def_rtl(csr2gpr, rtlreg_t *dest, int idx) {
     case CSR_mepc:
     case CSR_mstatus:
     case CSR_mtvec:
+    case CSR_satp:
         break;
     default:
         panic("unsupported csr reg");
@@ -27,6 +28,7 @@ static inline def_rtl(gpr2csr, rtlreg_t *src, int idx) {
     case CSR_mepc:
     case CSR_mstatus:
     case CSR_mtvec:
+    case CSR_satp:
         break;
     default:
         panic("unsupported csr reg");

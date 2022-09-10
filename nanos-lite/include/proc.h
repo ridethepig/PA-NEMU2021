@@ -2,7 +2,7 @@
 #define __PROC_H__
 
 #include <common.h>
-#include <memory.h>
+#include <nanos_memory.h>
 
 #define STACK_SIZE (8 * PGSIZE)
 

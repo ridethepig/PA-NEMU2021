@@ -36,6 +36,7 @@ bool vme_init(void* (*pgalloc_f)(int), void (*pgfree_f)(void*)) {
     for (; va < segments[i].end; va += PGSIZE) {
       map(&kas, va, va, 0);
     }
+    printf("mapped seg %d\n", i);
   }
 
   set_satp(kas.ptr);
@@ -66,7 +67,34 @@ void __am_switch(Context *c) {
   }
 }
 
+#define VPN2(va) (((uintptr_t)va >> 30) & 0x1ff)
+#define VPN1(va) (((uintptr_t)va >> 21) & 0x1ff)
+#define VPN0(va) (((uintptr_t)va >> 12) & 0x1ff)
+#define PPN(pte) ((pte << 2) & 0x3ffffffffff000)
+
 void map(AddrSpace *as, void *va, void *pa, int prot) {
+  // ignore prot
+  // now only sv39 3-level page table
+  // assert(as->area.start <= va);
+  // assert(as->area.end > va);
+  uintptr_t* pte2 = (uintptr_t*)((uintptr_t)as->ptr + VPN2(va) * sizeof(uintptr_t));
+  if ((*pte2 & 0x1) == 0) {
+    // need to alloc a page
+    uintptr_t newpage = (uintptr_t)pgalloc_usr(PGSIZE);
+    *pte2 = (newpage >> 2) | 1; // set V = 1, ppn44 = newpage>>2
+  }
+  uintptr_t* pte1 = (uintptr_t*)(PPN(*pte2) + VPN1(va) * sizeof(uintptr_t));
+  if ((*pte1 & 0x1) == 0) {
+    uintptr_t newpage = (uintptr_t)pgalloc_usr(PGSIZE);
+    *pte1 = (newpage >> 2) | 1; // set V = 1, ppn44 = newpage>>2
+  }
+  uintptr_t* pte0 = (uintptr_t*)(PPN(*pte1) + VPN0(va) * sizeof(uintptr_t));
+  // if ((*pte0 & 0x1) == 0) {
+  //   printf("new   va[%p]->pa[%p]\n", va, pa);
+  // } else {
+  //   printf("remap pa[%p]->pa[%p]\n", PPN(*pte0), pa);
+  // }
+  *pte0 = ((uintptr_t)pa >> 2) | 0xf; // XWRV = 1111, no protection in PA
 }
 
 Context *ucontext(AddrSpace *as, Area kstack, void *entry) {

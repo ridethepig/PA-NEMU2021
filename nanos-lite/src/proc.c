@@ -1,5 +1,5 @@
 #include <proc.h>
-#include <memory.h>
+#include <nanos_memory.h>
 #define MAX_NR_PROC 4
 
 static PCB pcb[MAX_NR_PROC] __attribute__((used)) = {};

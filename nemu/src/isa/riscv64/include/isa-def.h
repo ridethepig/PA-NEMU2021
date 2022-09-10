@@ -3,6 +3,44 @@
 
 #include <common.h>
 
+typedef union satp_t {
+  struct {
+    uint64_t ppn  :44;
+    uint64_t asid :16;
+    uint64_t mode : 4;
+  };
+  uint64_t val;
+} satp_t;
+
+typedef union pte_t {
+  struct {
+    uint64_t V        : 1;
+    uint64_t R        : 1;
+    uint64_t W        : 1;
+    uint64_t X        : 1;
+    uint64_t U        : 1;
+    uint64_t G        : 1;
+    uint64_t A        : 1;
+    uint64_t D        : 1;
+    uint64_t RSW      : 2;
+    uint64_t ppn      :44;
+    uint64_t reserved :10;
+  };
+  uint64_t val;
+} pte_t;
+
+typedef union sv39_vaddr_t
+{
+  struct {
+    uint64_t offset   :12;
+    uint64_t vpn0     : 9;
+    uint64_t vpn1     : 9;
+    uint64_t vpn2     : 9;
+    uint64_t reserved :25;
+  };
+  uint64_t val;
+}sv39_vaddr_t;
+
 typedef struct {
   union {
     uint64_t _64;
@@ -83,7 +121,7 @@ typedef struct {
   } instr;
 } riscv64_ISADecodeInfo;
 
-#define isa_mmu_check(vaddr, len, type) (MMU_DIRECT)
+// #define isa_mmu_check(vaddr, len, type) (MMU_DIRECT)
 enum {
   EX_instr_addr_misaligned = 0,
   EX_instr_access_fault,
@@ -105,4 +143,5 @@ enum {
 #define CSR_mepc    0x341
 #define CSR_mcause  0x342
 #define CSR_mtvec   0x305
+#define CSR_satp    0x180
 #endif
