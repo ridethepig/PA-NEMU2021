@@ -1,4 +1,5 @@
 #include <nanos_memory.h>
+#include <proc.h>
 
 static void *pf = NULL;
 
@@ -23,8 +24,26 @@ void free_page(void *p) {
   panic("not implement yet");
 }
 
-/* The brk() system call handler. */
+/** The brk() system call handler. 
+ * compare to max_brk, alloc and map
+*/
 int mm_brk(uintptr_t brk) {
+  // printf("mm_brk brk: 0x%08lx; max_brk 0x%08lx;", brk, current->max_brk);
+  current->max_brk = ROUNDUP(current->max_brk, PGSIZE); // max_brk and brk are open -- [,brk)
+  if (brk > current->max_brk) {
+    int page_count = ROUNDUP(brk - current->max_brk, PGSIZE) >> 12;
+    uintptr_t pages_start = (uintptr_t)new_page(page_count);
+    for (int i = 0; i < page_count; ++ i) {
+      map(&current->as, 
+          (void*)(current->max_brk + i * PGSIZE), 
+          (void*)(pages_start + i * PGSIZE),
+          MMAP_READ|MMAP_WRITE
+          );
+    }
+    current->max_brk += page_count * PGSIZE;
+    // printf("--brked-- ");
+  }
+  // printf("max_brk 0x%08lx\n", current->max_brk);
   return 0;
 }
 

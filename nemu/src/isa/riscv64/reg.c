@@ -10,11 +10,16 @@ const char *regs[] = {
 
 void isa_reg_display() {
   int i;
+  printf("| reg\t|         Hex        |          Dec         |");
   printf("| reg\t|         Hex        |          Dec         |\n");
-  for (i = 0; i < 32; ++ i) {
-    printf("| %s\t| 0x%016lX | %20ld |\n", regs[i], gpr(i), gpr(i));
+  for (i = 0; i < 16; ++ i) {
+    printf("| %s\t| 0x%016lX | %20ld || %s\t| 0x%016lX | %20ld |\n", 
+            regs[i], gpr(i), gpr(i), regs[i+16], gpr(i+16), gpr(i+16));
   }
-  printf("| pc\t| 0x%016lX |\n", cpu.pc);
+  printf("| pc\t| 0x%08lX |\n", cpu.pc);
+  printf("| mstatus | 0x%016lX | mepc  | 0x%016lX |\n", csr(CSR_mstatus), csr(CSR_mepc));
+  printf("| mcause  | 0x%016lX | mtvec | 0x%016lX |\n", csr(CSR_mcause), csr(CSR_mtvec));
+  printf("| satp    | 0x%016lX |\n", csr(CSR_satp));
 }
 
 /*

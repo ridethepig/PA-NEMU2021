@@ -1,8 +1,8 @@
 #include <proc.h>
 #include <elf.h>
 #include <fs.h>
-size_t ramdisk_read(void *buf, size_t offset, size_t len);
-size_t ramdisk_write(const void *buf, size_t offset, size_t len);
+
+void* new_page(size_t nr_page);
 
 #ifdef __LP64__
 # define Elf_Ehdr Elf64_Ehdr
@@ -19,7 +19,6 @@ uintptr_t loader(PCB *pcb, const char *filename) {
   int fd;
   fd = fs_open(filename, 0, 0);
   assert(fd != -1);
-  // ramdisk_read(ptr_ehdr, 0, sizeof(Elf_Ehdr));
   fs_read(fd, ptr_ehdr, sizeof(Elf_Ehdr));
   assert(*((uint32_t*)ptr_ehdr) == 0x464c457f);
   assert(ehdr.e_ident[EI_CLASS] == ELFCLASS64);
@@ -27,15 +26,28 @@ uintptr_t loader(PCB *pcb, const char *filename) {
   assert(ehdr.e_machine == EM_RISCV);
   for (i = 0; i < ehdr.e_phnum; ++ i) {
     phoff = i * ehdr.e_phentsize + ehdr.e_phoff;
-    // ramdisk_read(ptr_phdr, phoff, sizeof(Elf_Phdr));
     fs_lseek(fd, phoff, SEEK_SET);
     fs_read(fd, ptr_phdr, sizeof(Elf_Phdr));
     if (phdr.p_type == PT_LOAD) {
-      void* ptr_segment = (void *)phdr.p_vaddr;
-      // ramdisk_read(ptr_segment, phdr.p_offset, phdr.p_filesz);
+      uintptr_t vpage_start = phdr.p_vaddr & (~0xfff); // clear low 12 bit, first page
+      uintptr_t vpage_end = (phdr.p_vaddr + phdr.p_memsz - 1) & (~0xfff); // last page start
+      int page_num = ((vpage_end - vpage_start) >> 12) + 1;
+      uintptr_t page_ptr = (uintptr_t)new_page(page_num);
+      for (int j = 0; j < page_num; ++ j) {
+        map(&pcb->as, 
+            (void*)(vpage_start + (j << 12)), 
+            (void*)(page_ptr    + (j << 12)), 
+            MMAP_READ|MMAP_WRITE);
+        // Log("map 0x%8lx -> 0x%8lx", vpage_start + (j << 12), page_ptr    + (j << 12));
+      }
+      void* page_off = (void *)(phdr.p_vaddr & 0xfff); // we need the low 12 bit
       fs_lseek(fd, phdr.p_offset, SEEK_SET);
-      fs_read(fd, ptr_segment, phdr.p_filesz);
-      memset(ptr_segment + phdr.p_filesz, 0, phdr.p_memsz - phdr.p_filesz);
+      fs_read(fd, page_ptr + page_off, phdr.p_filesz); 
+      // at present, we are still at kernel mem map, so use page allocated instead of user virtual address
+      // new_page already zeroed the mem
+      pcb->max_brk = vpage_end + PGSIZE; 
+      // update max_brk, here it is the end of the last page
+      // this is related to heap, so ustack is not in consideration here
     }
   }
   return ehdr.e_entry;

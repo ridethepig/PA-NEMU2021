@@ -9,7 +9,7 @@ word_t vaddr_ifetch(vaddr_t addr, int len) {
   else if (mmu_type == MMU_TRANSLATE) {
     paddr = isa_mmu_translate(addr, len, MEM_TYPE_IFETCH);
   } else panic("Cannot handle MMU_FAIL or MMU_DYNAMIC");
-  assert(paddr == addr);
+  // assert(paddr == addr);
   return paddr_read(paddr, len);
 }
 
@@ -21,7 +21,7 @@ word_t vaddr_read(vaddr_t addr, int len) {
   else if (mmu_type == MMU_TRANSLATE) {
     paddr = isa_mmu_translate(addr, len, MEM_TYPE_READ);
   } else panic("Cannot handle MMU_FAIL or MMU_DYNAMIC");
-  assert(paddr == addr);
+  // assert(paddr == addr);
   return paddr_read(paddr, len);
 }
 
@@ -33,6 +33,6 @@ void vaddr_write(vaddr_t addr, int len, word_t data) {
   else if (mmu_type == MMU_TRANSLATE) {
     paddr = isa_mmu_translate(addr, len, MEM_TYPE_WRITE);
   } else panic("Cannot handle MMU_FAIL or MMU_DYNAMIC");
-  assert(paddr == addr);
-  paddr_write(addr, len, data);
+  // assert(paddr == addr);
+  paddr_write(paddr, len, data);
 }

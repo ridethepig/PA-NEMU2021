@@ -34,26 +34,34 @@ void context_kload(PCB* ptr_pcb, void(*entry)(void*), void* arg) {
 }
 
 void context_uload(PCB* ptr_pcb, const char* filename, char* const argv[], char* const envp[]) {
-  Area kstack;
-  uintptr_t ustack = (uintptr_t)(new_page(8) + 8 * PGSIZE);
-  kstack.start = ptr_pcb; // this is for PCB on stack, processed by kernel
-  kstack.end = &ptr_pcb->stack[sizeof(ptr_pcb->stack)];
+  protect(&ptr_pcb->as);
+  uintptr_t ustack = (uintptr_t)new_page(8);
+  // uintptr_t ustack_bottom = ustack + 8 * PGSIZE;
+  for (int i = 0; i < 8; ++ i) {
+    map(&ptr_pcb->as,
+        (void*)(ptr_pcb->as.area.end - (8 - i) * PGSIZE),
+        (void*)(ustack + i * PGSIZE),
+        MMAP_READ | MMAP_WRITE);
+  }
 
 // Set argv, envp
   int argv_count = 0;
   int envp_count = 0;
+  // collect arg count
   char* _argv[20] = {0};
   char* _envp[20] = {0 }; // tmp solution
-  // collect arg count
   if (argv) {
     while (argv[argv_count]) argv_count ++;
   }
   if (envp) {
     while (envp[envp_count]) envp_count ++;
   }
+  // char** _argv = (char**)ustack;
+  // char** _envp = (char**)(ustack + (argv_count+1)*sizeof(char*));
   // Log("argv_count:%d, envp_count:%d", argv_count, envp_count);
   // Log("envp: %p", envp[0]);
   // copy strings
+  ustack += 8 * PGSIZE; // put on the bottom of the stack
   for (int i = 0; i < envp_count; ++ i) {
     ustack -= strlen(envp[i]) + 1;
     strcpy((char*)ustack, envp[i]);
@@ -76,9 +84,15 @@ void context_uload(PCB* ptr_pcb, const char* filename, char* const argv[], char*
   ustack -= sizeof(uintptr_t);
   *(uintptr_t *)ustack = argv_count;
   // set stack pos
+
   uintptr_t entry = loader(ptr_pcb, filename);
-  ptr_pcb->cp = ucontext(NULL, kstack, (void*)entry);
+  Area kstack;
+  kstack.start = ptr_pcb; // this is for PCB on stack, processed by kernel
+  kstack.end = &ptr_pcb->stack[sizeof(ptr_pcb->stack)];
+  ptr_pcb->cp = ucontext(&ptr_pcb->as, kstack, (void*)entry);
+  // ptr_pcb->cp->GPRx = (uintptr_t)ptr_pcb->as.area.end - (ustack_bottom - ustack);
   ptr_pcb->cp->GPRx = ustack;
+  Log("updir %p", ptr_pcb->as.ptr);
 }
 
 void init_proc() {

@@ -36,7 +36,6 @@ bool vme_init(void* (*pgalloc_f)(int), void (*pgfree_f)(void*)) {
     for (; va < segments[i].end; va += PGSIZE) {
       map(&kas, va, va, 0);
     }
-    printf("mapped seg %d\n", i);
   }
 
   set_satp(kas.ptr);
@@ -100,6 +99,7 @@ void map(AddrSpace *as, void *va, void *pa, int prot) {
 Context *ucontext(AddrSpace *as, Area kstack, void *entry) {
   Context* context = kstack.end - sizeof(Context);
   memset(context, 0, sizeof(Context));
+  context->pdir = as->ptr;
   // context->gpr[1] = (uintptr_t)entry;
   context->mepc = (uintptr_t)entry;
   context->mepc -= 4;

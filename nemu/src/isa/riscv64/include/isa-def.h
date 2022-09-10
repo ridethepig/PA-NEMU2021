@@ -5,40 +5,40 @@
 
 typedef union satp_t {
   struct {
-    uint64_t ppn  :44;
-    uint64_t asid :16;
-    uint64_t mode : 4;
+    word_t ppn  :44;
+    word_t asid :16;
+    word_t mode : 4;
   };
-  uint64_t val;
+  word_t val;
 } satp_t;
 
 typedef union pte_t {
   struct {
-    uint64_t V        : 1;
-    uint64_t R        : 1;
-    uint64_t W        : 1;
-    uint64_t X        : 1;
-    uint64_t U        : 1;
-    uint64_t G        : 1;
-    uint64_t A        : 1;
-    uint64_t D        : 1;
-    uint64_t RSW      : 2;
-    uint64_t ppn      :44;
-    uint64_t reserved :10;
+    word_t V        : 1;
+    word_t R        : 1;
+    word_t W        : 1;
+    word_t X        : 1;
+    word_t U        : 1;
+    word_t G        : 1;
+    word_t A        : 1;
+    word_t D        : 1;
+    word_t RSW      : 2;
+    word_t ppn      :44;
+    word_t reserved :10;
   };
-  uint64_t val;
+  word_t val;
 } pte_t;
 
 typedef union sv39_vaddr_t
 {
   struct {
-    uint64_t offset   :12;
-    uint64_t vpn0     : 9;
-    uint64_t vpn1     : 9;
-    uint64_t vpn2     : 9;
-    uint64_t reserved :25;
+    word_t offset   :12;
+    word_t vpn0     : 9;
+    word_t vpn1     : 9;
+    word_t vpn2     : 9;
+    word_t reserved :25;
   };
-  uint64_t val;
+  word_t val;
 }sv39_vaddr_t;
 
 typedef struct {

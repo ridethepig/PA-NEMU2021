@@ -5,6 +5,7 @@
 #include <proc.h>
 // do not use syscall.h for any actual purpose
 // files.h and syscall.h are both symlink to navy-apps
+// #define CONFIG_STRACE
 #ifdef CONFIG_STRACE
 static char* syscall_names[] = {
   "SYS_exit",   "SYS_yield",  "SYS_open",   "SYS_read", "SYS_write",  "SYS_kill",   "SYS_getpid", "SYS_close",
@@ -14,6 +15,7 @@ static char* syscall_names[] = {
 #endif
 void context_uload(PCB* ptr_pcb, const char* filename, char* const argv[], char* const envp[]);
 void switch_boot_pcb();
+int mm_brk(int);
 
 static inline intptr_t syscall_execve(const char *filename, char * const argv[], char *const envp[]) {
   int fd = fs_open(filename, 0, 0);
@@ -21,10 +23,6 @@ static inline intptr_t syscall_execve(const char *filename, char * const argv[],
   context_uload(current, filename, argv, envp);
   switch_boot_pcb();
   yield();
-  return 0;
-}
-
-static inline intptr_t syscall_brk(intptr_t addr) {
   return 0;
 }
 
@@ -59,7 +57,7 @@ void do_syscall(Context *c) {
       c->GPRx = a[1];
     break;
     case SYS_brk:
-      c->GPRx = syscall_brk(a[1]);
+      c->GPRx = mm_brk(a[1]);
     break;
     case SYS_open:
       c->GPRx = fs_open((char *)a[1], a[2], a[3]);

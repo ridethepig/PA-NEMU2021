@@ -31,6 +31,7 @@ static void sh_handle_cmd(const char *cmd) {
   char* cmd_buf = (char*)malloc(strlen(cmd) + 1);
   strcpy(cmd_buf, cmd);
   char * tok0 = strtok(cmd_buf, " \n");
+  if (tok0 == NULL) return;
   // printf("CMD:%s\n", tok0);
   if (strcmp(tok0, "exit") == 0) {
     SDL_Quit();
