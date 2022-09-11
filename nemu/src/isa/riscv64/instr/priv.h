@@ -50,6 +50,10 @@ def_EHelper(ecall) {
 }
 
 def_EHelper(mret) {
-    rtl_j(s, cpu.sr[CSR_mepc]);
+    GET_MSTATUS(mstatus);
+    mstatus.mie = mstatus.mpie;
+    mstatus.mpie = 1;
+    SET_MSTATUS(mstatus);
+    rtl_j(s, cpu.mepc);
     // TODO set mstatus
 }

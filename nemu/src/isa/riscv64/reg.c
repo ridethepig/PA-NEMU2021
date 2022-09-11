@@ -17,9 +17,9 @@ void isa_reg_display() {
             regs[i], gpr(i), gpr(i), regs[i+16], gpr(i+16), gpr(i+16));
   }
   printf("| pc\t| 0x%08lX |\n", cpu.pc);
-  printf("| mstatus | 0x%016lX | mepc  | 0x%016lX |\n", csr(CSR_mstatus), csr(CSR_mepc));
-  printf("| mcause  | 0x%016lX | mtvec | 0x%016lX |\n", csr(CSR_mcause), csr(CSR_mtvec));
-  printf("| satp    | 0x%016lX |\n", csr(CSR_satp));
+  printf("| mstatus | 0x%016lX | mepc  | 0x%016lX |\n", cpu.mstatus, cpu.mepc);
+  printf("| mcause  | 0x%016lX | mtvec | 0x%016lX |\n", cpu.mcause, cpu.mtvec);
+  printf("| satp    | 0x%016lX |\n", cpu.satp);
 }
 
 /*

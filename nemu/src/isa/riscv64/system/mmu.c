@@ -4,7 +4,7 @@
 
 int isa_mmu_check(vaddr_t vaddr, int len, int type) {
   satp_t satp;
-  satp.val = cpu.sr[CSR_satp];
+  satp.val = cpu.satp;
   switch (satp.mode)
   {
   case 0x0: 
@@ -18,7 +18,7 @@ int isa_mmu_check(vaddr_t vaddr, int len, int type) {
 }
 
 paddr_t isa_mmu_translate(vaddr_t vaddr, int len, int type) {
-  satp_t satp; satp.val = cpu.sr[CSR_satp];
+  GET_SATP(satp);
   sv39_vaddr_t sv39_vaddr; sv39_vaddr.val = vaddr;
   // Log("try translate 0x%08lX", vaddr);
   word_t pte2_addr = (satp.ppn << 12) + sv39_vaddr.vpn2*sizeof(pte_t);

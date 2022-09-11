@@ -41,13 +41,61 @@ typedef union sv39_vaddr_t
   word_t val;
 }sv39_vaddr_t;
 
+typedef union mstatus_t {
+  struct {
+    uint64_t wpri0    : 1;
+    uint64_t sie      : 1;
+    uint64_t wpri2    : 1;
+    uint64_t mie      : 1;
+    uint64_t wpri4    : 1;
+    uint64_t spie     : 1;
+    uint64_t ube      : 1;
+    uint64_t mpie     : 1;
+    uint64_t spp      : 1;
+    uint64_t wpri10_9 : 2;
+    uint64_t mpp      : 2;
+    uint64_t fs       : 2;
+    uint64_t xs       : 2;
+    uint64_t mprv     : 1;
+    uint64_t sum      : 1;
+    uint64_t mxr      : 1;
+    uint64_t tvm      : 1;
+    uint64_t tw       : 1;
+    uint64_t tsr      : 1;
+    uint64_t wpri31_23: 9;
+    uint64_t uxl      : 2;
+    uint64_t sxl      : 2;
+    uint64_t sbe      : 1;
+    uint64_t mbe      : 1;
+    uint64_t wpri62_38: 25;
+    uint64_t sd       : 1;
+  };
+  word_t val;
+} mstatus_t;
+
+#define GET_MSTATUS(var) mstatus_t var; (var).val = cpu.mstatus
+#define SET_MSTATUS(var) cpu.mstatus = (var).val
+#define GET_SATP(var) satp_t var; (var).val = cpu.satp
+#define SET_SATP(var) cpu.satp = (var).val
+
+#define MSTATUS_MASK_MIE (1UL << 3)
+#define MSTATUS_MASK_MPIE (1UL << 7)
+
+#define MCAUSE_MASK_Int (1UL<<63)
+#define MCAUSE_MASK_ExCode ~(1UL<<63)
+
 typedef struct {
   union {
     uint64_t _64;
   } gpr[32];
   vaddr_t pc;
-  uint64_t sr[4096]; // no matter it is implemented or not
   // put new members at the end, or difftest will break down
+  uint64_t mstatus;
+  uint64_t mepc;
+  uint64_t mtvec;
+  uint64_t mcause;
+  uint64_t satp;
+  bool INTR;
 } riscv64_CPU_state;
 
 // decode
@@ -138,6 +186,13 @@ enum {
   EX_load_page_fault,
   EX_store_page_fault = 15
 };
+
+#define  INT_soft_s     0x8000000000000001
+#define  INT_soft_m     0x8000000000000003
+#define  INT_timer_s    0x8000000000000005
+#define  INT_timer_m    0x8000000000000007
+#define  INT_external_s 0x8000000000000009
+#define  INT_external_m 0x800000000000000b
 
 #define CSR_mstatus 0x300
 #define CSR_mepc    0x341
