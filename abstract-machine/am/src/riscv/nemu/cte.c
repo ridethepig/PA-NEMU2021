@@ -17,6 +17,9 @@ Context* __am_irq_handle(Context *c) {
         else
           ev.event = EVENT_SYSCALL; 
       break; // only one cause for ecall, so EVENT_YIELD is set by a7 == -1
+      case INT_timer_m:
+        ev.event = EVENT_IRQ_TIMER;
+      break;
       default: ev.event = EVENT_ERROR; break;
     }
 
@@ -46,7 +49,9 @@ Context *kcontext(Area kstack, void (*entry)(void *), void *arg) {
   // context->gpr[1] = (uintptr_t)entry;
   context->mepc = (uintptr_t)entry;
   context->mepc -= 4;
-  context->mstatus = 0xa00001800;
+  context->mstatus = 0xa00001880; 
+  // enable int after context switch, but not in trap
+  // so set mpie not mie, or the next intr may trigger intr though in trap
   context->mcause = 0;
   context->gpr[10] = (uintptr_t)arg;
   context->gpr[2] = (uintptr_t)kstack.end;

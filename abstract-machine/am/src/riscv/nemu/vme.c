@@ -103,7 +103,7 @@ Context *ucontext(AddrSpace *as, Area kstack, void *entry) {
   // context->gpr[1] = (uintptr_t)entry;
   context->mepc = (uintptr_t)entry;
   context->mepc -= 4;
-  context->mstatus = 0xa00001800;
+  context->mstatus = 0xa00001880;
   context->mcause = 0;
   // user stack is set by os
   return context;

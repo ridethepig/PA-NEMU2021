@@ -6,19 +6,19 @@ word_t isa_raise_intr(word_t NO, vaddr_t epc) {
    */
   cpu.mepc = epc;
   cpu.mcause = NO;
+
   GET_MSTATUS(mstatus);
   mstatus.mpie = mstatus.mie;
   mstatus.mie = 0;
-  SET_MSTATUS(mstatus);
-  
 #ifdef CONFIG_ETRACE
-  Log("Ex Trace: EPC@" FMT_WORD" -> HNDL@" FMT_WORD ", CAUSE: "FMT_WORD"", epc, cpu.sr[CSR_mtvec], NO);
+  Log("ETrace: EPC@0x%08lX STATUS:"FMT_WORD"->"FMT_WORD", CAUSE:"FMT_WORD, epc, cpu.mstatus, mstatus.val, NO);
 #endif
+  SET_MSTATUS(mstatus);
   return cpu.mtvec;
 }
 
 word_t isa_query_intr() {
-  if (cpu.mstatus & MSTATUS_MASK_MIE) {
+  if (cpu.INTR && (cpu.mstatus & MSTATUS_MASK_MIE)) {
     cpu.INTR = 0;
     return INT_timer_m;
   }

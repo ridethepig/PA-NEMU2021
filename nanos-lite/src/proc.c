@@ -17,7 +17,7 @@ void switch_boot_pcb() {
 void hello_fun(void *arg) {
   int j = 1;
   while (1) {
-    if (j % 10000 == 0)
+    // if (j % 10 == 0)
       Log("Hello World from Nanos-lite with arg '%s' for the %dth time!", (uintptr_t)arg, j);
     j ++;
     // Log("before yield: context=%p", pcb[0].cp);
@@ -105,7 +105,7 @@ void context_uload(PCB* ptr_pcb, const char* filename, char* const argv[], char*
   ptr_pcb->cp = ucontext(&ptr_pcb->as, kstack, (void*)entry);
   ptr_pcb->cp->GPRx = ustack_mapped;
   // ptr_pcb->cp->GPRx = ustack;
-  Log("updir %p", ptr_pcb->as.ptr);
+  Log("updir %p sp: %p", ptr_pcb->as.ptr, ustack_mapped);
 }
 
 void init_proc() {

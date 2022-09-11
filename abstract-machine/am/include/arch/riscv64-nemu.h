@@ -32,6 +32,11 @@ enum {
   EX_store_page_fault = 15
 };
 
-
+#define  INT_soft_s     0x8000000000000001
+#define  INT_soft_m     0x8000000000000003
+#define  INT_timer_s    0x8000000000000005
+#define  INT_timer_m    0x8000000000000007
+#define  INT_external_s 0x8000000000000009
+#define  INT_external_m 0x800000000000000b
 
 #endif

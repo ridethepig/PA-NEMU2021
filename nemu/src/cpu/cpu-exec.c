@@ -19,19 +19,21 @@ typedef struct
 {
   word_t pc[RINGBUF_SIZE];
   word_t instr[RINGBUF_SIZE];
+  word_t destval[RINGBUF_SIZE];
   int ptr;
 } IRINGBUF;
 static IRINGBUF iringbuf;
 
-static inline void iringbuf_push(word_t instr, word_t pc) {
+static inline void iringbuf_push(word_t instr, word_t pc, word_t destval) {
   iringbuf.instr[iringbuf.ptr] = instr;
   iringbuf.pc[iringbuf.ptr] = pc;
+  iringbuf.destval[iringbuf.ptr] = destval;
   iringbuf.ptr = (iringbuf.ptr + 1) % RINGBUF_SIZE;
 }
 
-static void dasm_sprint(char* dst, word_t instr, word_t pc) {
+static void dasm_sprint(char* dst, word_t instr, word_t pc, word_t destval) {
   char *p = dst;
-  p += snprintf(p, DASM_PRINTBUF_SIZE, FMT_WORD ":", pc);
+  p += snprintf(p, DASM_PRINTBUF_SIZE, "0x%08lx:", pc);
   const int ilen = 4; // just ignore CISC condition
   int i;
   uint8_t *instr_arr = (uint8_t *)&instr;
@@ -39,6 +41,7 @@ static void dasm_sprint(char* dst, word_t instr, word_t pc) {
     p += snprintf(p, 4, " %02x", instr_arr[i]);
   }
   *p = '\t'; p ++;
+  p += sprintf(p, "| 0x%016lX |\t", destval);
   void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
   disassemble(p, dst + DASM_PRINTBUF_SIZE - p, pc, (uint8_t *)&instr, ilen);
 }
@@ -48,11 +51,11 @@ static inline void iringbuf_print() {
   char dasm_printbuf[DASM_PRINTBUF_SIZE];
   printf("---------- Instruction Trace ----------\n");
   for (i = iringbuf.ptr; i < RINGBUF_SIZE; ++ i) {
-    dasm_sprint(dasm_printbuf, iringbuf.instr[i], iringbuf.pc[i]);
+    dasm_sprint(dasm_printbuf, iringbuf.instr[i], iringbuf.pc[i], iringbuf.destval[i]);
     puts(dasm_printbuf);
   }
   for (i = 0; i < iringbuf.ptr; ++ i) {
-    dasm_sprint(dasm_printbuf, iringbuf.instr[i], iringbuf.pc[i]);
+    dasm_sprint(dasm_printbuf, iringbuf.instr[i], iringbuf.pc[i], iringbuf.destval[i]);
     puts(dasm_printbuf);
   }
   printf("----------------- End -----------------\n");
@@ -83,7 +86,7 @@ const rtlreg_t rzero = 0;
 rtlreg_t tmp_reg[4];
 
 #ifdef CONFIG_DEVICE
-// void device_update();
+void device_update();
 void finalize_device();
 #endif
 void fetch_decode(Decode *s, vaddr_t pc);
@@ -141,6 +144,9 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 // just return from the level which could give us an actual answer directly to our caller
 // in dasm, its a jr instead of jalr, it doesnt write ra
 #endif
+#ifdef CONFIG_ITRACE
+  iringbuf_push(_this->isa.instr.val, _this->pc, *_this->dest.preg);
+#endif
 }
 
 static void fetch_decode_exec_updatepc(Decode *s) {
@@ -193,7 +199,6 @@ void fetch_decode(Decode *s, vaddr_t pc) {
   void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
   disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
       MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.instr.val, ilen);
-  iringbuf_push(s->isa.instr.val, s->pc);
 #endif
 }
 
@@ -237,6 +242,7 @@ void cpu_exec(uint64_t n) {
       // fall through
     case NEMU_QUIT: 
       statistic();
+      assert_fail_msg();
     #ifdef CONFIG_DEVICE
       finalize_device(); // remember to finalize timer to avoid sdl quit problem
     #endif

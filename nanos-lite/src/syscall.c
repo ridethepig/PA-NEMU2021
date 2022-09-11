@@ -28,6 +28,7 @@ static inline intptr_t syscall_execve(const char *filename, char * const argv[],
 
 static inline intptr_t syscall_gettimeofday(struct timeval * tv, struct timezone * tz) {
   uint64_t uptime = io_read(AM_TIMER_UPTIME).us;
+
   tv->tv_sec = uptime / 1000000;
   tv->tv_usec = uptime % 1000000; // according to man, usec ranges [0, 999999]
   if (tz) {
