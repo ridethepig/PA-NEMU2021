@@ -25,6 +25,7 @@ size_t serial_write(const void *buf, size_t offset, size_t len) {
   return len;
 }
 
+int fg_pcb;
 size_t events_read(void *buf, size_t offset, size_t len) {
 #ifdef NO_TI
   yield();
@@ -33,6 +34,20 @@ size_t events_read(void *buf, size_t offset, size_t len) {
   if (kbd_in.keycode == AM_KEY_NONE)
     return 0;
   else {
+    switch (kbd_in.keycode)
+    {
+    case AM_KEY_F1:
+      fg_pcb = 1;
+      break;
+    case AM_KEY_F2:
+      fg_pcb = 2;
+      break;
+    case AM_KEY_F3:
+      fg_pcb = 3;
+      break;
+    default:
+      break;
+    }
     int _len = snprintf(buf, len, "%s %s\n", kbd_in.keydown ? "kd" : "ku", keyname[kbd_in.keycode]);
     // printf("%s %d %s %d\n", buf, len, keyname[kbd_in.keycode], kbd_in.keydown);
     return _len;
