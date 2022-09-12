@@ -112,7 +112,7 @@ void init_proc() {
   context_kload(&pcb[0], hello_fun, "lalala");
   char* test_argv[] = {"/bin/exec-test", NULL};
   char* test_envp[] = {"LOVER=fucker", NULL};
-  context_uload(&pcb[1], "/bin/nslider", test_argv, test_envp);
+  context_uload(&pcb[1], "/bin/bird", test_argv, test_envp);
   Log("pcb = {%p, %p}", &pcb[0], &pcb[1]);
   Log("cp  = {%p, %p}", pcb[0].cp, pcb[1].cp);
   switch_boot_pcb();
@@ -123,8 +123,16 @@ void init_proc() {
 }
 
 Context* schedule(Context *prev) {
+  static int prio_count = 0;
   current->cp = prev;
-  current = (current == &pcb[1] ? &pcb[0] : &pcb[1]); 
+  if (prio_count < 200) {
+    prio_count ++;
+    current = &pcb[1];
+  } else{
+    prio_count = 0;
+    current = &pcb[0];
+  }
+
   // Log("schedule %p(updir %p) -> %p(updir %p)", prev, prev->pdir, current->cp, current->cp->pdir);
   // 问题：
   // prev好像不是很对，会莫名奇妙地重新shedule会主线程一次？
