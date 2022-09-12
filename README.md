@@ -28,3 +28,7 @@
 - No support for audio \| disk \| sdcard \| full-rtc 
 - Difftest for only PA1 and PA2 (Because I didn't implement Privilege U or Interrupt sync to spike (even no detach nor snapshot))
 
+> This repo has a almost workable PAL: https://github.com/huoshan12345/SdlpalEdit/tree/master/pal
+>
+> Remember to change all these filenames to lowercase, sdlpal is sensitive to case (but MS-DOS don't care)
+
