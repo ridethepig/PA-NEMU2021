@@ -84,6 +84,13 @@ typedef union mstatus_t {
 #define MCAUSE_MASK_Int (1UL<<63)
 #define MCAUSE_MASK_ExCode ~(1UL<<63)
 
+#define CSR_satp      0x180
+#define CSR_mstatus   0x300
+#define CSR_mtvec     0x305
+#define CSR_mscratch  0x340
+#define CSR_mepc      0x341
+#define CSR_mcause    0x342
+
 typedef struct {
   union {
     uint64_t _64;
@@ -94,6 +101,7 @@ typedef struct {
   uint64_t mepc;
   uint64_t mtvec;
   uint64_t mcause;
+  uint64_t mscratch;
   uint64_t satp;
   bool INTR;
 } riscv64_CPU_state;
@@ -194,9 +202,4 @@ enum {
 #define  INT_external_s 0x8000000000000009
 #define  INT_external_m 0x800000000000000b
 
-#define CSR_mstatus 0x300
-#define CSR_mepc    0x341
-#define CSR_mcause  0x342
-#define CSR_mtvec   0x305
-#define CSR_satp    0x180
 #endif

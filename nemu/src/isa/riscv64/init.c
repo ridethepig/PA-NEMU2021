@@ -17,11 +17,7 @@ static void restart() {
   cpu.pc = RESET_VECTOR;
 
   /* The zero register is always 0. */
-  cpu.gpr[0]._64 = 0;
-  cpu.mcause = 0;
-  cpu.satp = 0;
-  cpu.mepc = 0;
-  cpu.mtvec = 0;
+  memset(&cpu, 0, sizeof(cpu));
   cpu.mstatus = 0xa00001800;
 }
 
