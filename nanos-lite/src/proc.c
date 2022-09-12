@@ -21,10 +21,7 @@ void hello_fun(void *arg) {
     if (j % 100000 == 0)
       Log("Hello World from Nanos-lite with arg '%s' for the %dth time!", (uintptr_t)arg, j);
     j ++;
-    // Log("before yield: context=%p", pcb[0].cp);
-#ifdef NO_TI
     yield();
-#endif
   }
 }
 
@@ -110,8 +107,7 @@ void context_uload(PCB* ptr_pcb, const char* filename, char* const argv[], char*
   kstack.end = &ptr_pcb->stack[sizeof(ptr_pcb->stack)];
   ptr_pcb->cp = ucontext(&ptr_pcb->as, kstack, (void*)entry);
   ptr_pcb->cp->GPRx = ustack_mapped;
-  // ptr_pcb->cp->GPRx = ustack;
-  Log("updir %p sp: %p", ptr_pcb->as.ptr, ustack_mapped);
+  // Log("updir %p sp: %p", ptr_pcb->as.ptr, ustack_mapped);
 #ifdef NO_TI
   ptr_pcb->cp->mstatus = 0xa00001800;  
 #endif
@@ -119,20 +115,19 @@ void context_uload(PCB* ptr_pcb, const char* filename, char* const argv[], char*
 
 void init_proc() {
   // context_kload(&pcb[0], hello_fun, "lalala");
+  Log("Initializing processes...");
   char* test_argv[] = {NULL};
   char* test_envp[] = {NULL};
   fg_pcb = 1;
+  // load program here
   context_uload(&pcb[0], "/bin/hello", test_argv, test_envp);
   context_uload(&pcb[1], "/bin/nterm", test_argv, test_envp);
   context_uload(&pcb[2], "/bin/nslider", test_argv, test_envp);
   context_uload(&pcb[3], "/bin/bird", test_argv, test_envp);
-  Log("pcb = {%p, %p, %p, %p}", &pcb[0], &pcb[1], &pcb[2], &pcb[3]);
-  Log("cp  = {%p, %p, %p, %p}", pcb[0].cp, pcb[1].cp, pcb[2].cp, pcb[3].cp);
+  // Log("pcb = {%p, %p, %p, %p}", &pcb[0], &pcb[1], &pcb[2], &pcb[3]);
+  // Log("cp  = {%p, %p, %p, %p}", pcb[0].cp, pcb[1].cp, pcb[2].cp, pcb[3].cp);
   switch_boot_pcb();
-  // Log("Initializing processes...");
 
-  // load program here
-  // naive_uload(NULL, "/bin/menu");
 }
 
 Context* schedule(Context *prev) {

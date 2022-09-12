@@ -48,10 +48,10 @@ void next(int rep) {
 int main(int argc, char** argv) {
   SDL_Init(0);
   SDL_Surface *screen = SDL_SetVideoMode(W, H, 32, SDL_HWSURFACE);
-  printf("In nslider argc = %d\n", argc);
-  for (int iii = 0; iii < argc; ++ iii)
-    printf("%s\n", argv[iii]);
-  printf("LOVER=%s\n", getenv("LOVER") == NULL ? "notfound" : getenv("LOVER"));
+  // printf("In nslider argc = %d\n", argc);
+  // for (int iii = 0; iii < argc; ++ iii)
+  //   printf("%s\n", argv[iii]);
+  // printf("LOVER=%s\n", getenv("LOVER") == NULL ? "notfound" : getenv("LOVER"));
   int rep = 0, g = 0;
 
   render();

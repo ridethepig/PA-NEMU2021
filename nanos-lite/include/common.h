@@ -4,8 +4,8 @@
 /* Uncomment these macros to enable corresponding functionality. */
 #define HAS_CTE
 #define HAS_VME
-//#define MULTIPROGRAM
-//#define TIME_SHARING
+#define MULTIPROGRAM
+#define TIME_SHARING
 
 #include <am.h>
 #include <klib.h>
@@ -13,5 +13,5 @@
 #include <debug.h>
 
 #define FMT_WORD "0x%016lx"
-// #define NO_TI
+
 #endif
