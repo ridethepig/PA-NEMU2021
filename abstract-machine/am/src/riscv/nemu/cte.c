@@ -48,7 +48,6 @@ Context *kcontext(Area kstack, void (*entry)(void *), void *arg) {
   memset(context, 0, sizeof(Context));
   // context->gpr[1] = (uintptr_t)entry;
   context->mepc = (uintptr_t)entry;
-  context->mepc -= 4;
   context->mstatus = 0xa00001880; 
   // enable int after context switch, but not in trap
   // so set mpie not mie, or the next intr may trigger intr though in trap

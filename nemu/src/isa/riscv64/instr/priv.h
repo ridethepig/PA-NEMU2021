@@ -46,7 +46,7 @@ def_EHelper(csrrci) {
 }
 
 def_EHelper(ecall) {
-    rtl_j(s, isa_raise_intr(EX_ecall_m, s->pc));
+    rtl_j(s, isa_raise_intr(EX_ecall_m, s->snpc));
 }
 
 def_EHelper(mret) {

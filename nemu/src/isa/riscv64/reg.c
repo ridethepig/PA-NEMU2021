@@ -10,10 +10,10 @@ const char *regs[] = {
 
 void isa_reg_display() {
   int i;
-  printf("| reg\t|         Hex        |          Dec         |");
-  printf("| reg\t|         Hex        |          Dec         |\n");
+  printf("| reg |         Hex        |          Dec         |");
+  printf("| reg |         Hex        |          Dec         |\n");
   for (i = 0; i < 16; ++ i) {
-    printf("| %s\t| 0x%016lX | %20ld || %s\t| 0x%016lX | %20ld |\n", 
+    printf("| %3s | 0x%016lX | %20ld || %3s | 0x%016lX | %20ld |\n", 
             regs[i], gpr(i), gpr(i), regs[i+16], gpr(i+16), gpr(i+16));
   }
   printf("| pc\t| 0x%08lX |\n", cpu.pc);
