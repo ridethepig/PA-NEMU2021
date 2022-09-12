@@ -52,7 +52,7 @@ Context *kcontext(Area kstack, void (*entry)(void *), void *arg) {
   // enable int after context switch, but not in trap
   // so set mpie not mie, or the next intr may trigger intr though in trap
   context->mcause = 0;
-  context->gpr[10] = (uintptr_t)arg;
+  context->GPRx = (uintptr_t)arg;
   context->gpr[2] = (uintptr_t)kstack.end;
   context->next_priv = 0;
   return context;

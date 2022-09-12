@@ -13,5 +13,5 @@
 #include <debug.h>
 
 #define FMT_WORD "0x%016lx"
-#define NO_TI
+// #define NO_TI
 #endif

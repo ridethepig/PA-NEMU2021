@@ -35,8 +35,9 @@ __am_asm_trap:
 // 在Context结构体中添加一个新的成员np, 把概念上的c->np映射到它
 // 把概念上的c->sp映射到c->gpr[sp]
   csrrw sp, mscratch, sp  // exchange mscratch(ksp) and sp (now mscratch is orignal sp)
-  bnez sp, save_context   // if ksp == 0, goto save_context
-  csrr sp, mscratch       // if ksp != 0 : sp = ksp (restore original sp)
+  bnez sp, save_context   // if ksp != 0, goto save_context
+  csrrw sp, mscratch, sp  // if ksp == 0 : sp = ksp (restore original sp)
+                          // exchange back it, we need a zero mscratch as KERNEL tag
 save_context: 
   addi sp, sp, -CONTEXT_SIZE
 
@@ -78,7 +79,8 @@ save_context:
 
   csrrw sp, mscratch, sp
   bnez sp, return         // if sp != 0, means np == USER, it's original sp, and mscratch is ksp, just return
-  csrr sp, mscratch       // if sp == 0, means np == KERNEL, and mscratch is ksp, both exchange and read are ok 
+  csrrw sp, mscratch, sp  // if sp == 0, means np == KERNEL, and mscratch is ksp,
+                          // have to exchange, ksp have to be ZERO here
 
 return:
   mret
