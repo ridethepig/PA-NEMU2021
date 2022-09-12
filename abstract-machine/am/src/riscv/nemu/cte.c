@@ -54,6 +54,7 @@ Context *kcontext(Area kstack, void (*entry)(void *), void *arg) {
   context->mcause = 0;
   context->gpr[10] = (uintptr_t)arg;
   context->gpr[2] = (uintptr_t)kstack.end;
+  context->next_priv = 0;
   return context;
 }
 

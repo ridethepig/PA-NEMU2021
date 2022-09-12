@@ -17,11 +17,13 @@ void switch_boot_pcb() {
 void hello_fun(void *arg) {
   int j = 1;
   while (1) {
-    if (j % 1000000 == 0)
+    if (j % 100000 == 0)
       Log("Hello World from Nanos-lite with arg '%s' for the %dth time!", (uintptr_t)arg, j);
     j ++;
     // Log("before yield: context=%p", pcb[0].cp);
-    // yield();
+#ifdef NO_TI
+    yield();
+#endif
   }
 }
 
@@ -30,7 +32,10 @@ void context_kload(PCB* ptr_pcb, void(*entry)(void*), void* arg) {
   kstack.start = ptr_pcb;
   kstack.end = &ptr_pcb->stack[sizeof(ptr_pcb->stack)];
   ptr_pcb->cp = kcontext(kstack, entry, arg);
-  // Log("Stack [%p, %p) Context: %p Context.pdir %p", ptr_pcb, kstack.end, ptr_pcb->cp, ptr_pcb->cp->pdir);
+ #ifdef NO_TI
+  ptr_pcb->cp->mstatus = 0xa00001800;  
+#endif
+ // Log("Stack [%p, %p) Context: %p Context.pdir %p", ptr_pcb, kstack.end, ptr_pcb->cp, ptr_pcb->cp->pdir);
   // Log("Context Pos %p", &ptr_pcb->cp);
 }
 
@@ -106,14 +111,18 @@ void context_uload(PCB* ptr_pcb, const char* filename, char* const argv[], char*
   ptr_pcb->cp->GPRx = ustack_mapped;
   // ptr_pcb->cp->GPRx = ustack;
   Log("updir %p sp: %p", ptr_pcb->as.ptr, ustack_mapped);
+#ifdef NO_TI
+  ptr_pcb->cp->mstatus = 0xa00001800;  
+#endif
 }
 
 void init_proc() {
   context_kload(&pcb[0], hello_fun, "lalala");
   char* test_argv[] = {"/bin/exec-test", NULL};
   char* test_envp[] = {"LOVER=fucker", NULL};
-  context_uload(&pcb[1], "/bin/bird", test_argv, test_envp);
-  Log("pcb = {%p, %p}", &pcb[0], &pcb[1]);
+  context_uload(&pcb[1], "/bin/nterm", test_argv, test_envp);
+  context_uload(&pcb[2], "/bin/hello", test_argv, test_envp);
+  Log("pcb = {%p, %p}", &pcb[0], &pcb[1], &pcb[2]);
   Log("cp  = {%p, %p}", pcb[0].cp, pcb[1].cp);
   switch_boot_pcb();
   // Log("Initializing processes...");
@@ -123,13 +132,16 @@ void init_proc() {
 }
 
 Context* schedule(Context *prev) {
-  static int prio_count = 0;
+  static int prio_count = 1;
   current->cp = prev;
-  if (prio_count < 200) {
-    prio_count ++;
+  if (prio_count == 1) {
+    prio_count = 2;
     current = &pcb[1];
-  } else{
+  } else if (prio_count == 2){
     prio_count = 0;
+    current = &pcb[2];
+  } else {
+    prio_count = 1;
     current = &pcb[0];
   }
 

@@ -2,9 +2,10 @@
 
 def_EHelper(csrrw) {
     // TODO: privilege checking, but not necessary in PA
-    rtl_csr2gpr(s, ddest, s->src2.imm);
+    rtl_csr2gpr(s, s0, s->src2.imm); // if rs1 == rd, then things will all mess up
     // read first, rd==$0 is handled in decode stage
     rtl_gpr2csr(s, dsrc1, s->src2.imm);
+    rtl_mv(s, ddest, s0);
 }
 
 def_EHelper(csrrs) {

@@ -19,7 +19,7 @@ void isa_reg_display() {
   printf("| pc\t| 0x%08lX |\n", cpu.pc);
   printf("| mstatus | 0x%016lX | mepc  | 0x%016lX |\n", cpu.mstatus, cpu.mepc);
   printf("| mcause  | 0x%016lX | mtvec | 0x%016lX |\n", cpu.mcause, cpu.mtvec);
-  printf("| satp    | 0x%016lX |\n", cpu.satp);
+  printf("| mscratch| 0x%016lX | satp  | 0x%016lX |\n", cpu.mscratch, cpu.satp);
 }
 
 /*

@@ -105,5 +105,6 @@ Context *ucontext(AddrSpace *as, Area kstack, void *entry) {
   context->mstatus = 0xa00001880;
   context->mcause = 0;
   // user stack is set by os
+  context->next_priv = (uintptr_t)kstack.end;
   return context;
 }

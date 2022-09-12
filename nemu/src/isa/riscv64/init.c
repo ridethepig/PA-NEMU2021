@@ -13,11 +13,11 @@ static const uint32_t img [] = {
 };
 
 static void restart() {
+  memset(&cpu, 0, sizeof(cpu));
   /* Set the initial program counter. */
   cpu.pc = RESET_VECTOR;
 
   /* The zero register is always 0. */
-  memset(&cpu, 0, sizeof(cpu));
   cpu.mstatus = 0xa00001800;
 }
 

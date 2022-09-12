@@ -6,6 +6,7 @@ struct Context {
   uintptr_t mcause;
   uintptr_t mstatus;
   uintptr_t mepc;
+  uintptr_t next_priv;
   void *pdir;
 };
 
